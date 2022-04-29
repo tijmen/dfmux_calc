@@ -1,0 +1,42 @@
+The goal of this code is to easily estimate readout noise contributions from DfMUX
+
+
+
+Three classes are defined in the code- squid, wire, and dfmux_noise.
+The squid object stores the transimpedance, dynamic impedance, input inductance and 
+NEI of your SAA
+The wire object stores the parasitic resistance, capacitance, and inductance of the wiring
+harness linking the SAA and the 300K stages. It also can store information about
+resistive or capcitive shunts across the SAA out pairs if they are present. This class
+has methods which calculate various helpful transfer functions and effective resistances
+of the harness at given frequences. 
+The dfmux_noise object stores bolometer parameters, various important parasitic impedances,
+and the temperature the cold stage is at, as well as an associated squid and wire object.
+Lastly there is the option to specify a different wiring harness for the nuller lines
+than the SAA out lines. (One is used for current sharing estimation and the other 
+for SAA transfer function estimation.)
+This class has methods which calculate the readout noise expected at given frequences. 
+Measured current sharing can be given as an input to this method. There is also to an option
+to estimate DAN off noise refered to the input of the SQUID Controller Board. This option
+is only useful for in lab debuging, not scientific forcasting.
+
+EXAMPLES
+SA13 = squid(1000,750,3e-12,70e-9) #SA13 Zt, Zdyn, NEI, and Lin
+wire = wire(30, 40e-12, 1e-6) #wiring harness resistance, capcitance, self inductance
+bolo = bolo(1.0,0.2,10,0.25,0.5) #Bolometer operating resistance, stray resistance, loopgain, bath temp, Tc
+parasitics = parasitics(stripline, c_gnd, r48) 
+noise = dfmux_noise(SA13, wire, bolo, parasitics)
+noise.init_freq(np.linspace(1e6,5e6,100) #evaluating noise between 1 and 5 MHz bias frequencies 
+
+That produces noise estimates for a dfmux setup somewhat similar to SPT-3G/POLARBEAR 2
+the noise object has properties such as CS, TF and noise broken down into its components to help identify causes
+of noise for a given setup
+
+
+
+TODO
+include function to scale array size of SAA
+make function that creates NEI PDFs suitable for BoloCalc
+include function to convert NEI noise to NEP
+-> create bolometer object for neatness
+-> 
