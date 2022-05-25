@@ -7,17 +7,37 @@ from scipy import constants as c
 
 #helper class to store SAA information
 class squid:
-    def __init__(self, zt, rdyn, inoise, lin):
+    def __init__(self, zt, rdyn, inoise, lin, n_series=False, n_parallel = False, power = False):
         self.zt = zt            #Transimpedance of SAA
         self.rdyn = rdyn        #Dynamic impedance of SAA
         self.inoise = inoise    #SAA noise refered to input coil
         self.lin = lin          #input inductance of the SAA
-        
+        self.n_series = n_series #number of individual SQUIDs in series to form the SAA
+        self.n_parallel = n_parallel #number of banks of SQUIDs in parallel to form the SAA
+        self.power = power      #power dissipated by SAA when in operation
+
+    #method to rescale the existing SAA to a new array
+    def scale_SAA(self,new_series, new_parallel):
+        if not self.n_series and not self.n_parallel and not self.power:
+            print('squid has no specified array size and/or power!')
+            return
+        self.zt *= new_series / self.n_series
+        self.rdyn *= new_series / new_parallel * self.n_parallel / self.n_series
+        self.lin *= new_series * new_parallel / self.n_series / self.n_parallel
+        self.inoise *= np.sqrt(self.n_series * self.n_parallel ) / np.sqrt(new_series * new_parallel)
+        self.power *= new_series * new_parallel / self.n_series / self.n_parallel
+        self.n_series = new_series
+        self.n_parallel = new_parallel
+
 #helper class to store bolometer information
 class bolo:
-    def __init__(self,r,loopgain):
-        self.r = r
-        self.loopgain = loopgain
+    def __init__(self,r,loopgain,rstray,psat,tc,tb):
+        self.r = r                    #Operating resistance of the bolometer
+        self.loopgain = loopgain      #operating loopgain of the bolometer
+        self.rstray = rstray          #stray resistance in series with the bolometer
+        self.psat = psat              #saturation power of the bolometer
+        self.tc = tc                  #critical temperature of the bolometer
+        self.tb = tb                  #bath temperature the bolometer is operated at
 
 #helper class to store wiring harness information and do some calculations    
 class wire:
@@ -104,14 +124,11 @@ class wire:
 
 class dfmux_noise:
     
-    def __init__(self, squid, wire, stripline, c_gnd, r48, rbolo=1, rstray = 10e-3, temperature=0.3, loopgain=10, nuller_wire=None):
-        self.loopgain = loopgain   #bolometer loopgain
+    def __init__(self, squid, bolo, wire, stripline, c_gnd, r48, nuller_wire=None):
         self.squid = squid         #a squid object 
+        self.bolo = bolo           #a bolometer object
         self.wire = wire           #a wiring harness object
         self.stripline = stripline #this is the inductance on anything between the bolos and the SAA- eg the bias too
-        self.rbolo = rbolo         #operating resistance of the bolometer
-        self.rstray = rstray       #stray resistance in line with the bolometer
-        self.temperature = temperature
         self.c_gnd  = c_gnd        #parasitic capacitance to ground in the cold circuit
         self.r48 = r48             #Value of the resistor R48 on the SQCB
         self.nuller_wire = nuller_wire #a wiring harness object for the nuller lines if this is different than the ones used for the
@@ -124,7 +141,7 @@ class dfmux_noise:
         
 
         #bolometer noise
-        self.jnoise = np.sqrt(2) * 1/(1+self.loopgain)*np.sqrt(4*1.38e-23*temperature / (rbolo))  #JM masters section 5.6
+        self.jnoise = np.sqrt(2) * 1/(1+self.bolo.loopgain)*np.sqrt(4*1.38e-23*self.bolo.tc / (self.bolo.r))  #JM masters section 5.6
         
         
     def init_freq(self, frequencies, #frequencies to calculate noise at
@@ -190,7 +207,7 @@ class dfmux_noise:
                     self.saa_in_impedance.append(  2 * np.pi * f * self.squid.lin  )
                     
                     #the comb impedance- assuming this is for an on resonance frequency
-                    self.on_res_comb_impedance.append(  2 * np.pi * f * self.stripline + self.rbolo + self.rstray  )
+                    self.on_res_comb_impedance.append(  2 * np.pi * f * self.stripline + self.bolo.r + self.bolo.rstray  )
                     
                     #the impedance of the path through ground and R48
                     self.c_r48.append(  1/(2 * np.pi * f * self.c_gnd) + self.r48  )
