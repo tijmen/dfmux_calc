@@ -32,11 +32,17 @@ That produces noise estimates for a dfmux setup somewhat similar to SPT-3G/POLAR
 the noise object has properties such as CS, TF and noise broken down into its components to help identify causes
 of noise for a given setup
 
+CITATIONS
+This code is heavily based on the following (which are refered to in comments when relevant)
+Joshua Montgomery's PhD Thesis - https://escholarship.mcgill.ca/concern/theses/1c18dm29r
+2021 paper SPT-3G assesment of DfMUX noise https://arxiv.org/abs/2103.16017
+Joshua Montgomery's Masters Thesis - https://www.proquest.com/docview/2514727898?pq-origsite=gscholar&fromopenview=true
 
 
 TODO
-include function to scale array size of SAA
+DONE - include function to scale array size of SAA
 make function that creates NEI PDFs suitable for BoloCalc
 include function to convert NEI noise to NEP
--> create bolometer object for neatness
--> 
+DONE - create bolometer object for neatness
+create parasitic object for neatness
+make function to convert NEI to NEP for comparison to LiteBIRD specs

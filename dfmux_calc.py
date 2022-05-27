@@ -32,12 +32,21 @@ class squid:
 #helper class to store bolometer information
 class bolo:
     def __init__(self,r,loopgain,rstray,psat,tc,tb):
-        self.r = r                    #Operating resistance of the bolometer
+        self.r = r                    #Operating resistance of the bolometer in ohms
         self.loopgain = loopgain      #operating loopgain of the bolometer
-        self.rstray = rstray          #stray resistance in series with the bolometer
-        self.psat = psat              #saturation power of the bolometer
-        self.tc = tc                  #critical temperature of the bolometer
-        self.tb = tb                  #bath temperature the bolometer is operated at
+        self.rstray = rstray          #stray resistance in series with the bolometer in ohms
+        self.psat = psat              #saturation power of the bolometer in watts
+        self.tc = tc                  #critical temperature of the bolometer in kelvin
+        self.tb = tb                  #bath temperature the bolometer is operated at in kelvin
+        
+#helper class to store important parasitics
+class parasitics:
+    def __init__(self,stripline, c_gnd, r48=0):
+        self.stripline = stripline    #self inductance in henries of the stripline conecting the SAA to the rest of the 
+                                      #DfMUX circuit - or in its absence and stray inductance that looks like it
+        self.c_gnd = c_gnd            #the parasitic capacitance in farads to ground from the focal plane, bolometers or LCs
+        self.r48 = r48                #The value in ohms of R48 on the SQUID Controller Boards - this connected the negative
+                                      #side of the nuller to ground and in 2022 its default value is 0 Ohms
 
 #helper class to store wiring harness information and do some calculations    
 class wire:
@@ -124,13 +133,11 @@ class wire:
 
 class dfmux_noise:
     
-    def __init__(self, squid, bolo, wire, stripline, c_gnd, r48, nuller_wire=None):
+    def __init__(self, squid, bolo, wire, para, nuller_wire=None):
         self.squid = squid         #a squid object 
         self.bolo = bolo           #a bolometer object
         self.wire = wire           #a wiring harness object
-        self.stripline = stripline #this is the inductance on anything between the bolos and the SAA- eg the bias too
-        self.c_gnd  = c_gnd        #parasitic capacitance to ground in the cold circuit
-        self.r48 = r48             #Value of the resistor R48 on the SQCB
+        self.para = para           #a parasitics object
         self.nuller_wire = nuller_wire #a wiring harness object for the nuller lines if this is different than the ones used for the
                                    #SQUID output lines. By default this is None and it is assumed they are the same.
         
@@ -207,10 +214,10 @@ class dfmux_noise:
                     self.saa_in_impedance.append(  2 * np.pi * f * self.squid.lin  )
                     
                     #the comb impedance- assuming this is for an on resonance frequency
-                    self.on_res_comb_impedance.append(  2 * np.pi * f * self.stripline + self.bolo.r + self.bolo.rstray  )
+                    self.on_res_comb_impedance.append(  2 * np.pi * f * self.para.stripline + self.bolo.r + self.bolo.rstray  )
                     
                     #the impedance of the path through ground and R48
-                    self.c_r48.append(  1/(2 * np.pi * f * self.c_gnd) + self.r48  )
+                    self.c_r48.append(  1/(2 * np.pi * f * self.para.c_gnd) + self.para.r48  )
                     
                     #combining those terms to estimate the current sharing factor- from joshua's spt3g paper
                     if self.nuller_wire == None:
