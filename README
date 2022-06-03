@@ -8,7 +8,8 @@ The squid object stores the transimpedance, dynamic impedance, input inductance 
 NEI of your SAA. It also has a method which will rescale the SAA to a different array size,
 eg will take the parameters for a SAA with 3x64 SQUIDs in series and two banks in parallel
 and change the stored SAA parameters to instead be represenative of a SAA with a 2x64 in series
-with 3 banks in parallel.
+with 3 banks in parallel. Lastly it stores information relavent to the noise contribution of a 
+snubber on the input of the SAA, namely its resistance and temperature.
 
 The bolometer object stores the operating resistance, stray resistance, achieved loopgain, 
 saturation power, critical temperature, and bath temperature.
@@ -63,5 +64,6 @@ DONE - include function to scale array size of SAA
 make function that creates NEI PDFs suitable for BoloCalc
 DONE - create bolometer object for neatness
 DONE - create parasitic object for neatness
-make function to convert NEI to NEP for comparison to LiteBIRD specs
+DONE - make function to convert NEI to NEP for comparison to LiteBIRD specs
 make functions to produce statistical predictions for bulk telescope readout
+DONE - include option for noise with subbers

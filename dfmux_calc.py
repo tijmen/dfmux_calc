@@ -7,7 +7,9 @@ from scipy import constants as c
 
 #helper class to store SAA information
 class squid:
-    def __init__(self, zt, rdyn, inoise, lin, n_series=False, n_parallel = False, power = False):
+    def __init__(self, zt, rdyn, inoise, lin, 
+                 n_series=False, n_parallel = False, power = False,
+                 linear_range=2e-6, snubber = False, t=0.3):
         self.zt = zt            #Transimpedance of SAA
         self.rdyn = rdyn        #Dynamic impedance of SAA
         self.inoise = inoise    #SAA noise refered to input coil
@@ -15,6 +17,10 @@ class squid:
         self.n_series = n_series #number of individual SQUIDs in series to form the SAA
         self.n_parallel = n_parallel #number of banks of SQUIDs in parallel to form the SAA
         self.power = power      #power dissipated by SAA when in operation
+        self.linear_range=linear_range #linear range of SAA input in Amps
+        self.snubber = snubber  # Resistance of any snubber used to regulate the SAA
+        self.t = t              #the temperature the SAA is operating at in Kelvin. This is ignored outside of 
+                                #calculating the johnson noise of any snubber. 
 
     #method to rescale the existing SAA to a new array
     def scale_SAA(self,new_series, new_parallel):
@@ -150,6 +156,11 @@ class dfmux_noise:
         #bolometer noise
         self.jnoise = np.sqrt(2) * 1/(1+self.bolo.loopgain)*np.sqrt(4*1.38e-23*self.bolo.tc / (self.bolo.r))  #JM masters section 5.6
         
+        #if a snubber is being used - add the johnson noise of it in quadrature with bolometer johnson noise
+        #this assumes that the snubber is at the same temperature stage as the SAA 
+        if self.squid.snubber != False:
+            self.jnoise = np.sqrt(self.jnoise**2 + 4*1.38e-23*self.squid.t / (self.squid.snubber)) 
+        
         
     def init_freq(self, frequencies, #frequencies to calculate noise at
                   dan=True,          #if this is a dan on noise calculation or not
@@ -214,7 +225,11 @@ class dfmux_noise:
                     self.saa_in_impedance.append(  2 * np.pi * f * self.squid.lin  )
                     
                     #the comb impedance- assuming this is for an on resonance frequency
-                    self.on_res_comb_impedance.append(  2 * np.pi * f * self.para.stripline + self.bolo.r + self.bolo.rstray  )
+                    if not self.squid.snubber:
+                        self.on_res_comb_impedance.append(  2 * np.pi * f * self.para.stripline + self.bolo.r + self.bolo.rstray  )
+                    else:
+                        self.on_res_comb_impedance.append(  1/(
+                            1/(2 * np.pi * f * self.para.stripline + self.bolo.r + self.bolo.rstray  ) + 1/self.squid.snubber ) )
                     
                     #the impedance of the path through ground and R48
                     self.c_r48.append(  1/(2 * np.pi * f * self.para.c_gnd) + self.para.r48  )
@@ -297,9 +312,23 @@ def refer_squid(warm_squid, shunt):
     return squid(cold_zt, cold_zdyn, warm_squid.inoise, warm_squid.lin)
   
 
+#function to produce conversion factor from pA/rtHz NEI to NEP
+def nei_to_nep(dfmux_noise,optical_power):
+    vbias = np.sqrt(dfmux_noise.bolo.r * (dfmux_noise.bolo.psat - optical_power) )
+    responsivity = np.sqrt(2) * dfmux_noise.bolo.loopgain/(1+dfmux_noise.bolo.loopgain) / vbias
+    return 1/responsivity
 
 
 
+#function to make plots of the noise 
 
-  
+def plot_noise(dfmux_noise,f):
+    plt.figure()
+    plt.plot(f,dfmux_noise.total)
+    plt.plot(f,np.abs(dfmux_noise.demod)*1e12 ,':',label='Expected DEMOD noise')
+    plt.plot(f,[np.abs(dfmux_noise.csf[i] * dfmux_noise.squid.inoise )*1e12 for i in range(len(f))] ,'--',label='Expected SAA noise')
+    plt.plot(f,[np.abs(dfmux_noise.demod[i]  /dfmux_noise.csf[i] )*1e12 for i in range(len(f))] ,'--', label = 'Demod no cs')
+    plt.plot(f,[np.abs(dfmux_noise.jnoise )*1e12 for i in range(len(f))] ,'--', label = 'Johnson')
+    plt.plot(f,[np.abs(dfmux_noise.warm_noise_nc )*1e12 for i in range(len(f))] ,'--', label = 'warm n/c')
+    plt.legend()
         
