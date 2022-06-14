@@ -139,17 +139,21 @@ class wire:
 
 class dfmux_noise:
     
-    def __init__(self, squid, bolo, wire, para, nuller_wire=None):
+    def __init__(self, squid, bolo, wire, para, nuller_wire=None, nuller_cold=False):
         self.squid = squid         #a squid object 
         self.bolo = bolo           #a bolometer object
         self.wire = wire           #a wiring harness object
         self.para = para           #a parasitics object
         self.nuller_wire = nuller_wire #a wiring harness object for the nuller lines if this is different than the ones used for the
+        self.nuller_cold = nuller_cold #if the current stiffening resistors for the nuller are located on the 300K stage this is False, if they are located on the 4K stage this is true
                                    #SQUID output lines. By default this is None and it is assumed they are the same.
         
         #Warm electrnics noise
         carrier = 1.6e-12                                        #A/rtHz JM PhD Table 7.5
-        nuller = 4.9e-12                                         #A/rtHz JM PhD Table 7.6
+        if self.nuller_cold:
+            nuller = np.sqrt(0.38e-12**2 + 3.6e-12**2)           #A/rtHz JM PhD p176 + table 7.6
+        else:
+            nuller = 4.9e-12                                     #A/rtHz JM PhD Table 7.6
         self.warm_noise_nc = np.sqrt(carrier**2 + nuller**2)     #total noise from the carrier/nuller refered to SAA input
         
 
@@ -315,7 +319,9 @@ def refer_squid(warm_squid, shunt):
 #function to produce conversion factor from pA/rtHz NEI to NEP
 def nei_to_nep(dfmux_noise,optical_power):
     vbias = np.sqrt(dfmux_noise.bolo.r * (dfmux_noise.bolo.psat - optical_power) )
-    responsivity = np.sqrt(2) * dfmux_noise.bolo.loopgain/(1+dfmux_noise.bolo.loopgain) / vbias
+    responsivity = np.sqrt(2) * dfmux_noise.bolo.loopgain/(
+        1+dfmux_noise.bolo.loopgain*(dfmux_noise.bolo.r - dfmux_noise.bolo.rstray)/(
+            dfmux_noise.bolo.r + dfmux_noise.bolo.rstray))/ vbias
     return 1/responsivity
 
 
