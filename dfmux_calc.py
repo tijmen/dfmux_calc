@@ -21,6 +21,9 @@ class squid:
         self.snubber = snubber  # Resistance of any snubber used to regulate the SAA
         self.t = t              #the temperature the SAA is operating at in Kelvin. This is ignored outside of 
                                 #calculating the johnson noise of any snubber. 
+            
+        self.m_factor = 1       #starting with a mutual inductance factor of 1 - this is just a note of how far
+                                #from base mutual inductance this has been modified
 
     #method to rescale the existing SAA to a new array
     def scale_SAA(self,new_series, new_parallel):
@@ -34,6 +37,23 @@ class squid:
         self.power *= new_series * new_parallel / self.n_series / self.n_parallel
         self.n_series = new_series
         self.n_parallel = new_parallel
+        
+    #method to scale the mutual inductance of the existing SAA up or down
+    def change_mutual_ind(self, m_factor):
+        self.zt *= m_factor
+        self.lin *= m_factor
+        self.linear_range *= m_factor
+        self.m_factor *= m_factor
+        
+    def print_info(self):
+        print('Transimpedence: {} $\Omega$'.format(round(self.zt,0)))
+        print('Dyn. impedence: {} $\Omega$'.format(round(self.rdyn,0)))
+        print('Input inductance: {} nH'.format(round(self.lin/1e-9,0)))
+        print('NEI: {} pA/rtHz'.format(round(self.inoise/1e-12,1)))
+        print('Power dis.: {} nW'.format(round(self.power/1e-9,0)))
+        print('Array size: {}x{}'.format(self.n_series, self.n_parallel))
+        print('Linear range: {} $\mu$A'.format(round(self.linear_range/1e-6,2)))
+        
 
 #helper class to store bolometer information
 class bolo:
@@ -149,7 +169,8 @@ class dfmux_noise:
                                    #SQUID output lines. By default this is None and it is assumed they are the same.
         
         #Warm electrnics noise
-        carrier = 1.6e-12                                        #A/rtHz JM PhD Table 7.5
+        #carrier = 1.6e-12                                        #A/rtHz JM PhD Table 7.5
+        carrier = 2.9e-12/(bolo.r + bolo.rstray)                  #A/rtHz JM PhD Table 7.5 with bias johnson removed, and scaled by bolometer resistance
         if self.nuller_cold:
             nuller = np.sqrt(0.38e-12**2 + 3.6e-12**2)           #A/rtHz JM PhD p176 + table 7.6
         else:
@@ -330,11 +351,47 @@ def nei_to_nep(dfmux_noise,optical_power):
 
 def plot_noise(dfmux_noise,f):
     plt.figure()
-    plt.plot(f,dfmux_noise.total)
-    plt.plot(f,np.abs(dfmux_noise.demod)*1e12 ,':',label='Expected DEMOD noise')
-    plt.plot(f,[np.abs(dfmux_noise.csf[i] * dfmux_noise.squid.inoise )*1e12 for i in range(len(f))] ,'--',label='Expected SAA noise')
-    plt.plot(f,[np.abs(dfmux_noise.demod[i]  /dfmux_noise.csf[i] )*1e12 for i in range(len(f))] ,'--', label = 'Demod no cs')
-    plt.plot(f,[np.abs(dfmux_noise.jnoise )*1e12 for i in range(len(f))] ,'--', label = 'Johnson')
-    plt.plot(f,[np.abs(dfmux_noise.warm_noise_nc )*1e12 for i in range(len(f))] ,'--', label = 'warm n/c')
+    plt.plot(f/1e6,dfmux_noise.total)
+    plt.plot(f/1e6,np.abs(dfmux_noise.demod)*1e12 ,':',label='Expected DEMOD noise')
+    plt.plot(f/1e6,[np.abs(dfmux_noise.csf[i] * dfmux_noise.squid.inoise )*1e12 for i in range(len(f))] ,'--',label='Expected SAA noise')
+    plt.plot(f/1e6,[np.abs(dfmux_noise.demod[i]  /dfmux_noise.csf[i] )*1e12 for i in range(len(f))] ,'--', label = 'Demod no cs')
+    plt.plot(f/1e6,[np.abs(dfmux_noise.jnoise )*1e12 for i in range(len(f))] ,'--', label = 'Johnson')
+    plt.plot(f/1e6,[np.abs(dfmux_noise.warm_noise_nc )*1e12 for i in range(len(f))] ,'--', label = 'warm n/c')
     plt.legend()
+    plt.xlabel('Bias frequency [MHz]')
+    plt.ylabel('Noise [pA/rtHz]')
         
+        
+#function to make plots of noise as function of bolometer operating impedance and stray resistance
+def plt_nei_v_r(saa, bolo, wh, para,f):
+    
+    rbolo, rstray = np.meshgrid(np.linspace(0.1, 1.0 , 100), np.linspace(0, 0.2, 100))
+
+    noise_min = np.zeros(rbolo.shape)
+    noise_max = np.zeros(rbolo.shape)
+
+    i=0
+    j=0
+    for b in rbolo[0]:
+        for s in rstray[:,0]:
+            bolo.r=b
+            bolo.rstray = s
+            cnoise1 = dfmux_noise(saa,bolo,wh,para,nuller_cold=True)
+            cnoise1.init_freq(f)
+            noise_min[i][j] = np.min(cnoise1.total)
+            noise_max[i][j] = np.max(cnoise1.total)
+            j+=1
+        
+        i+=1
+        j=0
+    
+    fig, ax = plt.subplots()
+
+    c = ax.pcolormesh(rbolo, rstray, noise_min, cmap='jet')
+    CS = ax.contour(rbolo, rstray, noise_max, 6, colors='k') 
+    ax.clabel(CS, fontsize=9, inline=True)
+    fig.colorbar(c, ax=ax)
+    
+    plt.xlabel('$R_{bolo}$')
+    plt.ylabel('R_{stray}$')
+    
