@@ -1,6 +1,8 @@
 The goal of this code is to easily estimate readout noise contributions from DfMUX
 
-
+#################################
+#######dfmux_calc################
+#################################
 
 Three classes are defined in the code- squid, wire, bolometer, parasitic, and dfmux_noise.
 
@@ -58,6 +60,17 @@ Joshua Montgomery's PhD Thesis - https://escholarship.mcgill.ca/concern/theses/1
 2021 paper SPT-3G assesment of DfMUX noise https://arxiv.org/abs/2103.16017
 Joshua Montgomery's Masters Thesis - https://www.proquest.com/docview/2514727898?pq-origsite=gscholar&fromopenview=true
 
+#################################
+#########nep_calc################
+#################################
+Still under construction
+This is to handle the conversion from NEI to NEP in an easy to handle way, particularly for experiments 
+with many optical bands like LiteBIRD. 
+
+The experiment class is meant to hold information about optical power and noise NEP requirements 
+plt_r_reqs plots readout NEI requirements for a given optical band as a function of bolometer operating
+resistance and stray resistance. 
+
 
 TODO
 DONE - include function to scale array size of SAA
@@ -67,3 +80,5 @@ DONE - create parasitic object for neatness
 DONE - make function to convert NEI to NEP for comparison to LiteBIRD specs
 make functions to produce statistical predictions for bulk telescope readout
 DONE - include option for noise with subbers
+Add resistive bias for experiments that use it
+Add PySpice calculation of current sharing factor
