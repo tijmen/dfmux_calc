@@ -192,6 +192,7 @@ class dfmux_noise:
                   csf=None):         #if you want to calculate noise with a given csf (this must be the same size as frequencies)
         
         
+        self.f = np.array(frequencies)
         self.csf = []                    #current sharing factor
         self.tf = []                     #wiring harness transfer function
         self.saa_in_impedance = []       #impedance of the SAA imput coil
