@@ -4,6 +4,7 @@ import dfmux_calc as d
 import nep_calc as n
 
 #input parameters
+<<<<<<< Updated upstream
 lb = n.experiment('litebird',0) #loading definitions about bands
 #band = 1   #hardest band to meet readout NEP in
 band = 11  #mid reqs
@@ -13,6 +14,16 @@ popt = lb.popt[band] #optical power in the band of interest
 psat = 2.5 * popt    #saturation power in the band
 loopgain = 10        #assumed detector loopgain
 #required readout NEP
+=======
+lb = n.experiment('litebird',0)
+band = 1   #hard reqs
+#band = 11  #mid reqs
+#band = 18  #easy reqs
+frac = 0.1
+popt = lb.popt[band]
+psat = 2.5 * popt
+loopgain = 10
+>>>>>>> Stashed changes
 nep = lb.ntot[band]  * np.sqrt((1+frac)**2 - 1)
 #Do you want to increase the mutual inductance of the SAA versus baseline input?
 mut = False  #set to a number probably between 1-3 if you want to increase the mutual inductance
@@ -48,14 +59,30 @@ fail = nei_req.copy()
 #SA13 properties representative of the SAA Tucker tested
 sa13 = d.squid(1750,                                     #Transimpedence [Ohms]
                350,                                     #Dynamic impedence [Ohms]
-               1e-12,                                   #NEI [A/rtHz] (just taking the number JM used)
+               1e-12,                                   #NEI [A/rtHz] (just a numer that makes sense from Tucker's results)
                70e-9,                                   #Input inductance [H]
                n_series=3*64,n_parallel=2,power=200e-9,  #array size and power dissipation 
                snubber=5,                           #if there is a snubber on the input
                t=0.3)                                     #what temperature the SAA is at [K]
+<<<<<<< Updated upstream
 if mut != False:
     sa13.change_mutual_ind(mut)
 
+=======
+
+#STCR E112 properties representative of the median SAA 
+stcr = d.squid(1500,                                     #Transimpedence [Ohms]
+               850,                                     #Dynamic impedence [Ohms]
+               2e-12,                                   #NEI [A/rtHz] (just assuming that this has about ~2x the NEI of the SA13)
+               20e-9,                                   #Input inductance [H]
+               n_series=112,n_parallel=1,power=25e-9,  #array size and power dissipation 
+               snubber=5,                           #if there is a snubber on the input
+               t=0.3)                                     #what temperature the SAA is at [K]
+
+
+
+#sa13.change_mutual_ind(3)
+>>>>>>> Stashed changes
 #Wiring harness properties
 wh = d.wire(30,                            #resistance [Ohms]
             40e-12,                        #capacitance [F] (this is the important one)
@@ -72,7 +99,7 @@ bolo = d.bolo(1.0,            #operating impedence [Ohms] this is changed later
 #Other parasitics
 para = d.parasitics(stripline,cgnd,0) #stripline inductance[H], parasitic capacitance to ground[F] and R48 [Ohms]
 
-dfm = d.dfmux_noise(sa13,bolo,wh,para,nuller_cold=True)
+dfm = d.dfmux_noise(stcr,bolo,wh,para,nuller_cold=True)
 
 bias_f = [4.5e6]  #only looking at the highest bias frequency for the single worst performing bolometer
 
@@ -135,7 +162,7 @@ cbar.set_label('Required SQUIDs in array')
 fig, ax = plt.subplots()
 
 c = ax.pcolormesh(rbolo, rstray, nei_req*1e12, cmap='jet',vmin=5,vmax = 15)
-d = ax.pcolormesh(rbolo, rstray, np.where(fail == 1, 1, np.nan), cmap='binary', vmin=0, vmax=1,zorder=10)
+#d = ax.pcolormesh(rbolo, rstray, np.where(fail == 1, 1, np.nan), cmap='binary', vmin=0, vmax=1,zorder=10)
 CS = ax.contour(rbolo, rstray, loop_atten, 6, colors='w') 
 ax.clabel(CS, fontsize=9, inline=True)
 ax.set_title('NEI requirement for {} GHz band: $P_{{sat}}$={}pW, $P_{{opt}}=${}pW, \n $\mathcal{{L}}=${}, NEP$_{{read}}$={}aW$/\sqrt{{\mathrm{{Hz}}}}$, {}% NEP increase'.format(

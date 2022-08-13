@@ -57,9 +57,11 @@ def make_circuits(dfmux_noise):
     carrier.R('bias','bias_pos','bias_neg',30@u_mOhm)
     carrier.L('sqin','sqin_pos','bias_neg',dfmux_noise.squid.lin @u_H)
     if dfmux_noise.squid.snubber != False:
-        carrier.R('snubr','sqin_pos','bias_neg',dfmux_noise.squid.snubber @u_Ohm)
-    if dfmux_noise.squid.snubber_c != False:
-        carrier.C('snubc','sqin_pos','bias_neg',dfmux_noise.squid.snubber_c @u_F)
+        if dfmux_noise.squid.snubber_c != False:
+            carrier.C('snubc','sqin_pos','snub_mid',dfmux_noise.squid.snubber_c @u_F)
+            carrier.R('snubr','snub_mid','bias_neg',dfmux_noise.squid.snubber @u_Ohm)
+        else:
+            carrier.R('snubr','sqin_pos','bias_neg',dfmux_noise.squid.snubber @u_Ohm)
     carrier.R('short','bias_neg',carrier.gnd,0@u_mOhm)
     carrier.SinusoidalVoltageSource('bias','bias_pos','bias_neg',amplitude=1@u_V)
     
@@ -75,9 +77,12 @@ def make_circuits(dfmux_noise):
     nuller.R('bias','bias_pos','bias_neg',30@u_mOhm)
     nuller.L('sqin','sqin_pos','bias_neg',dfmux_noise.squid.lin @u_H)
     if dfmux_noise.squid.snubber != False:
-        nuller.R('snubr','sqin_pos','bias_neg',dfmux_noise.squid.snubber @u_Ohm)
-    if dfmux_noise.squid.snubber_c != False:
-        nuller.C('snubc','sqin_pos','bias_neg',dfmux_noise.squid.snubber_c @u_F)
+        if dfmux_noise.squid.snubber_c != False:
+            nuller.C('snubc','sqin_pos','snub_mid',dfmux_noise.squid.snubber_c @u_F)
+            nuller.R('snubr','snub_mid','bias_neg',dfmux_noise.squid.snubber @u_Ohm)
+        else:
+            nuller.R('snubr','sqin_pos','bias_neg',dfmux_noise.squid.snubber @u_Ohm)
+        
     nuller.R('short','bias_neg',nuller.gnd,0@u_mOhm)
     nuller.SinusoidalCurrentSource('nuller','sqin_pos','bias_neg',amplitude=1@u_A)
     
