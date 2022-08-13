@@ -4,35 +4,48 @@ import dfmux_calc as d
 import nep_calc as n
 
 #input parameters
-lb = n.experiment('litebird',0)
-#band = 1   #hard reqs
+lb = n.experiment('litebird',0) #loading definitions about bands
+#band = 1   #hardest band to meet readout NEP in
 band = 11  #mid reqs
 #band = 18  #easy reqs
-frac = 0.05
-popt = lb.popt[band]
-psat = 2.5 * popt
-loopgain = 10
+frac = 0.05  #the readout increases the total internal (photon, phonon) by frac
+popt = lb.popt[band] #optical power in the band of interest
+psat = 2.5 * popt    #saturation power in the band
+loopgain = 10        #assumed detector loopgain
+#required readout NEP
 nep = lb.ntot[band]  * np.sqrt((1+frac)**2 - 1)
+#Do you want to increase the mutual inductance of the SAA versus baseline input?
+mut = False  #set to a number probably between 1-3 if you want to increase the mutual inductance
+stripline = 60e-9 #assumed stripline inductance
+cgnd = 0.7e-9  #assumed parasitic capacitance to ground
+p_banks = 1    #number of parallel banks in the SAA to use
 
 
 
-#def r and stray to sweep through
+
+#define operating bolometer resistance and stray to sweep through
 rbolo, rstray = np.meshgrid(np.linspace(0.1, 1.0 , 100), np.linspace(0, 0.2, 100))
     
+#what voltage bias the detector should be operated at
 vbias = np.sqrt( (rbolo + rstray) * (psat - popt) )
     
+#aproximate responsivity of the detector
 resp = np.sqrt(2) / vbias * loopgain / (1 + loopgain * (rbolo - rstray)/(rbolo + rstray ) ) 
     
+#by what factor the loogain is being reduced by the stray resistance
 loop_atten = (rbolo - rstray)/(rbolo + rstray )
     
+#what the required NEI for the band is
 nei_req = nep * resp
 
+#initializing arrays to store the required power consumption of the SAA, the number of SQUIDs in the array 
+#and an array to note when there is no found solution to meet the requirements
 req_power = nei_req.copy()
 req_nsq = nei_req.copy()
 fail = nei_req.copy()
 
 #baseline SAA and other parasitics
-#SA13 properties representative of the median SAA 
+#SA13 properties representative of the SAA Tucker tested
 sa13 = d.squid(1750,                                     #Transimpedence [Ohms]
                350,                                     #Dynamic impedence [Ohms]
                1e-12,                                   #NEI [A/rtHz] (just taking the number JM used)
@@ -40,7 +53,9 @@ sa13 = d.squid(1750,                                     #Transimpedence [Ohms]
                n_series=3*64,n_parallel=2,power=200e-9,  #array size and power dissipation 
                snubber=5,                           #if there is a snubber on the input
                t=0.3)                                     #what temperature the SAA is at [K]
-#sa13.change_mutual_ind(3)
+if mut != False:
+    sa13.change_mutual_ind(mut)
+
 #Wiring harness properties
 wh = d.wire(30,                            #resistance [Ohms]
             40e-12,                        #capacitance [F] (this is the important one)
@@ -48,18 +63,18 @@ wh = d.wire(30,                            #resistance [Ohms]
             rshunt=False, cshunt=False)    #if theres any resistive or capcitive shunts across the output of the SAA
 
 #bolometer properties
-bolo = d.bolo(1.0,            #operating impedence [Ohms]
+bolo = d.bolo(1.0,            #operating impedence [Ohms] this is changed later
               loopgain,              #loopgain 
-              0.2,            #stray impedence [Ohms]
+              0.2,            #stray impedence [Ohms] this is changed later
               5e-12,          #psat - this isn't used at all
               0.171,0.1)        #Tc and Tb [K]
 
 #Other parasitics
-para = d.parasitics(60e-9,0.7e-9,0) #stripline inductance[H], parasitic capacitance to ground[F] and R48 [Ohms]
+para = d.parasitics(stripline,cgnd,0) #stripline inductance[H], parasitic capacitance to ground[F] and R48 [Ohms]
 
 dfm = d.dfmux_noise(sa13,bolo,wh,para,nuller_cold=True)
 
-bias_f = [4.5e6]
+bias_f = [4.5e6]  #only looking at the highest bias frequency for the single worst performing bolometer
 
 
 #calc needed NEI at each combo
@@ -76,7 +91,7 @@ for i in range(100):
         #increase number of SAA until NEI met
         while True:
             #print(i,j,n_sq)
-            dfm.squid.scale_SAA(n_sq, 1)
+            dfm.squid.scale_SAA(n_sq, p_banks)
             dfm.init_freq(bias_f)
             if max(dfm.total) <= target:
                 req_power[i][j] = dfm.squid.power
@@ -108,8 +123,6 @@ CS = ax.contour(rbolo, rstray, loop_atten, 6, colors='w')
 ax.clabel(CS, fontsize=9, inline=True)
 ax.set_title('# SQ requirement for {} GHz band: $P_{{sat}}$={}pW, $P_{{opt}}=${}pW, \n $\mathcal{{L}}=${}, NEP$_{{read}}$={}aW$/\sqrt{{\mathrm{{Hz}}}}$, {}% NEP increase'.format(
                     lb.opt_freqs[band] ,round(psat*1e12,2), round(popt*1e12,2), loopgain, round(nep*1e18,1), frac*100))
-    # set the limits of the plot to the limits of the data
-    #ax.axis([x.min(), x.max(), y.min(), y.max()])
 cbar = fig.colorbar(c, ax=ax)
     
 plt.xlabel('$R_{bolo}$ [$\Omega$]')
@@ -127,8 +140,6 @@ CS = ax.contour(rbolo, rstray, loop_atten, 6, colors='w')
 ax.clabel(CS, fontsize=9, inline=True)
 ax.set_title('NEI requirement for {} GHz band: $P_{{sat}}$={}pW, $P_{{opt}}=${}pW, \n $\mathcal{{L}}=${}, NEP$_{{read}}$={}aW$/\sqrt{{\mathrm{{Hz}}}}$, {}% NEP increase'.format(
                     lb.opt_freqs[band] ,round(psat*1e12,2), round(popt*1e12,2), loopgain, round(nep*1e18,1), frac*100))
-    # set the limits of the plot to the limits of the data
-    #ax.axis([x.min(), x.max(), y.min(), y.max()])
 cbar = fig.colorbar(c, ax=ax)
     
 plt.xlabel('$R_{bolo}$ [$\Omega$]')
