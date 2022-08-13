@@ -81,4 +81,5 @@ DONE - make function to convert NEI to NEP for comparison to LiteBIRD specs
 make functions to produce statistical predictions for bulk telescope readout
 DONE - include option for noise with subbers
 Add resistive bias for experiments that use it
-Add PySpice calculation of current sharing factor
+DONE Add PySpice calculation of current sharing factor
+Improve pyspice efficiency 
