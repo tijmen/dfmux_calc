@@ -47,7 +47,7 @@ class squid:
     #method to scale the mutual inductance of the existing SAA up or down
     def change_mutual_ind(self, m_factor):
         self.zt *= m_factor
-        self.lin *= m_factor
+        self.lin *= m_factor**2
         self.linear_range *= m_factor
         self.m_factor *= m_factor
         
