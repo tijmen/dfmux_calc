@@ -197,8 +197,10 @@ class dfmux_noise:
     def init_freq(self, frequencies, #frequencies to calculate noise at
                   dan=True,          #if this is a dan on noise calculation or not
                   skip_spice = False,#if you want to skip the pyspice sim and fall back on an approximation
+                  recal_csf = True,  #if you want to recalculate csf from scratch each time , only set to False for iterating SAA size, only Lin is changed
                   csf=None):         #if you want to calculate noise with a given csf (this must be the same size as frequencies)
         
+            
         
         self.f = np.array(frequencies)
         self.csf = []                    #current sharing factor
@@ -254,7 +256,8 @@ class dfmux_noise:
             if csf == None:
                 spec = importlib.util.find_spec('PySpice')
                 if spec is None or skip_spice == True:
-                    print("PySpice is not installed... continuing with analytic approximation")
+                    if not skip_spice:
+                        print("PySpice is not installed... continuing with analytic approximation")
                 
                 
                     ##Calculate the impedances necesary for current sharing
@@ -290,6 +293,7 @@ class dfmux_noise:
                 else:
                     #instead use a full PySpice calculation
                     self.csf = cs.get_csf(self)
+                    
                 
             #in this case take the measured CSF given as input
             else:
