@@ -8,18 +8,20 @@ from PySpice.Unit import *
 
 #a subcircuit that is just a bolometer with a LC resonator
 class rlc(SubCircuit):
-    NODES = ('rlc_in', 'out')
+    NODES = ('rlc_in', 'out','inter')
     def __init__(self, name, R=1@u_Ω, L=60@u_uH, C = 100@u_pF, para = 1 @u_pF):
         SubCircuit.__init__(self, name, *self.NODES)
-        self.R(1, 'rlc_in', 'rl', R)
-        self.L(1, 'rl', 'lc', L)
-        self.C(1, 'lc', 'out', C)
+        self.R(1, 'rlc_in', 'rc', R)
+        self.L(1, 'cl', 'll', L/2)
+        self.L(2, 'll', 'out', L/2)
+        self.C(1, 'rc', 'cl', C)
         
         
-        #self.C(3, 'rl', 'inter', para)
-        #self.C(4, 'lc', 'inter', para)
+        #self.C(3, 'rc', 'inter', 0.3e-12 @u_F)
+        #self.C(4, 'cl', 'inter', 0.3e-12 @u_F)
+        #self.C(5, 'll', 'inter', 1.28 @u_pF)
         
-        #self.R(5,'inter', self.gnd, 1 @u_Ohm)
+        #self.R(5,'inter', self.gnd, 15 @u_Ohm)
         
 #a subcircuit that is a segment of twisted pair wire
 class wire(SubCircuit):
@@ -87,8 +89,11 @@ def make_circuit(dfmux_noise,cs,cname):
     for c in cs:
         name= 'rlc'+str(i)
         nuller.subcircuit(rlc(name,R=dfmux_noise.bolo.r@u_Ohm, C=c@u_pF, para = dfmux_noise.para.c_gnd/len(cs)/4 @u_F))
-        nuller.X(str(i+30),name,'bias_pos','sqin_pos')
+        nuller.X(str(i+30),name,'bias_pos','sqin_pos','rlc_inter')
         i+=1
+    #nuller.R('LC_gdn','rlc_inter',nuller.gnd,150 @u_Ohm)
+        
+        
     nuller.R('bias','bias_pos','bias_neg',30@u_mOhm)
     nuller.L('sqin','sqin_pos','bias_neg',dfmux_noise.squid.lin @u_H)
     if dfmux_noise.squid.snubber != False:
@@ -98,8 +103,8 @@ def make_circuit(dfmux_noise,cs,cname):
         else:
             nuller.R('snubr','sqin_pos','bias_neg',dfmux_noise.squid.snubber @u_Ohm)
         
-    nuller.C('wafer_para','bias_pos',nuller.gnd,dfmux_noise.para.c_gnd @u_F)
-    nuller.C('p_para','sqin_pos',nuller.gnd,dfmux_noise.para.c_gnd @u_F)
+    #nuller.C('wafer_para','bias_pos',nuller.gnd,dfmux_noise.para.c_gnd @u_F)
+    #nuller.C('p_para','sqin_pos',nuller.gnd,dfmux_noise.para.c_gnd @u_F)
     
     for i in range(10):
         name = 'wire'+str(i)
