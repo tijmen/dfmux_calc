@@ -253,51 +253,52 @@ class dfmux_noise:
             
         if dan:
             #in this case estimate the current sharing factor based off of JM SPT-3G noise paper
-            if csf == None:
-                spec = importlib.util.find_spec('PySpice')
-                if spec is None or skip_spice == True:
-                    if not skip_spice:
-                        print("PySpice is not installed... continuing with analytic approximation")
-                
-                
-                    ##Calculate the impedances necesary for current sharing
-                    
-                    #the input impedance of the SAA
-                    self.saa_in_impedance =  2 * np.pi * self.f * self.squid.lin  
-                    
-                    #the comb impedance- assuming this is for an on resonance frequency
-                    if not self.squid.snubber:
-                        self.on_res_comb_impedance =  2 * np.pi * self.f * self.para.stripline + self.bolo.r + self.bolo.rstray  
+            try:
+                if csf == None:
+                    spec = importlib.util.find_spec('PySpice')
+                    if spec is None or skip_spice == True:
+                        if not skip_spice:
+                            print("PySpice is not installed... continuing with analytic approximation")
+
+
+                        ##Calculate the impedances necesary for current sharing
+
+                        #the input impedance of the SAA
+                        self.saa_in_impedance =  2 * np.pi * self.f * self.squid.lin  
+
+                        #the comb impedance- assuming this is for an on resonance frequency
+                        if not self.squid.snubber:
+                            self.on_res_comb_impedance =  2 * np.pi * self.f * self.para.stripline + self.bolo.r + self.bolo.rstray  
+                        else:
+                            self.on_res_comb_impedance =   1/(
+                                1/(2 * np.pi * self.f * self.para.stripline + self.bolo.r + self.bolo.rstray  ) + 1/self.squid.snubber ) 
+
+                        #the impedance of the path through ground and R48
+                        self.c_r48 =   1/(2 * np.pi * self.f * self.para.c_gnd) + self.para.r48 
+
+                        #combining those terms to estimate the current sharing factor- from joshua's spt3g paper
+                        if self.nuller_wire == None:
+                            self.csf =  1/(self.c_r48 / ( (self.on_res_comb_impedance + np.abs(self.wire.series_imp(self.f))) * 
+                                             self.saa_in_impedance / 
+                               (self.on_res_comb_impedance + self.saa_in_impedance + np.abs(self.wire.series_imp(self.f))) + 
+                               np.abs(self.wire.series_imp(self.f)) + self.c_r48 ) * 
+                                    self.on_res_comb_impedance / (self.on_res_comb_impedance + self.saa_in_impedance))
+
+                        #if nuller_wire is not none this has a different wiring than connected to the SAA output
+                        else:
+                            self.csf =  1/(self.c_r48 / ( (self.on_res_comb_impedance + np.abs(self.nuller_wire.series_imp(self.f))) * 
+                                             self.saa_in_impedance / 
+                               (self.on_res_comb_impedance + self.saa_in_impedance + np.abs(self.nuller_wire.series_imp(self.f))) + 
+                               np.abs(self.nuller_wire.series_imp(self.f)) + self.c_r48 ) * 
+                                    self.on_res_comb_impedance / (self.on_res_comb_impedance + self.saa_in_impedance))
                     else:
-                        self.on_res_comb_impedance =   1/(
-                            1/(2 * np.pi * self.f * self.para.stripline + self.bolo.r + self.bolo.rstray  ) + 1/self.squid.snubber ) 
-                    
-                    #the impedance of the path through ground and R48
-                    self.c_r48 =   1/(2 * np.pi * self.f * self.para.c_gnd) + self.para.r48 
-                    
-                    #combining those terms to estimate the current sharing factor- from joshua's spt3g paper
-                    if self.nuller_wire == None:
-                        self.csf =  1/(self.c_r48 / ( (self.on_res_comb_impedance + np.abs(self.wire.series_imp(self.f))) * 
-                                         self.saa_in_impedance / 
-                           (self.on_res_comb_impedance + self.saa_in_impedance + np.abs(self.wire.series_imp(self.f))) + 
-                           np.abs(self.wire.series_imp(self.f)) + self.c_r48 ) * 
-                                self.on_res_comb_impedance / (self.on_res_comb_impedance + self.saa_in_impedance))
-                    
-                    #if nuller_wire is not none this has a different wiring than connected to the SAA output
-                    else:
-                        self.csf =  1/(self.c_r48 / ( (self.on_res_comb_impedance + np.abs(self.nuller_wire.series_imp(self.f))) * 
-                                         self.saa_in_impedance / 
-                           (self.on_res_comb_impedance + self.saa_in_impedance + np.abs(self.nuller_wire.series_imp(self.f))) + 
-                           np.abs(self.nuller_wire.series_imp(self.f)) + self.c_r48 ) * 
-                                self.on_res_comb_impedance / (self.on_res_comb_impedance + self.saa_in_impedance))
-                else:
-                    #instead use a full PySpice calculation
-                    self.csf = cs.get_csf(self)
+                        #instead use a full PySpice calculation
+                        self.csf = cs.get_csf(self)
                     
                 
             #in this case take the measured CSF given as input
-            else:
-                self.csf = np.array(csf[i])
+            except:
+                self.csf = np.array(csf)
             
         #this is an option to calculate SQCB input refered noise with DAN off forcing CSF to not impact the noise
         else:
