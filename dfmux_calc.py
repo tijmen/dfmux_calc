@@ -63,11 +63,12 @@ class squid:
 
 #helper class to store bolometer information
 class bolo:
-    def __init__(self,r,loopgain,rstray,psat,tc,tb):
+    def __init__(self,r,loopgain,rstray,psat,popt,tc,tb):
         self.r = np.array([r]).flatten()                    #Operating resistance of the bolometer in ohms
         self.loopgain = np.array([loopgain]).flatten()      #operating loopgain of the bolometer
         self.rstray = np.array([rstray]).flatten()          #stray resistance in series with the bolometer in ohms
         self.psat = np.array([psat]).flatten()              #saturation power of the bolometer in watts
+        self.popt = np.array([popt]).flatten()              #optical power on bolometer in watts
         self.tc = np.array([tc]).flatten()                  #critical temperature of the bolometer in kelvin
         self.tb = np.array([tb]).flatten()                  #bath temperature the bolometer is operated at in kelvin
         
