@@ -71,6 +71,7 @@ class bolo:
         self.popt = np.array([popt]).flatten()              #optical power on bolometer in watts
         self.tc = np.array([tc]).flatten()                  #critical temperature of the bolometer in kelvin
         self.tb = np.array([tb]).flatten()                  #bath temperature the bolometer is operated at in kelvin
+        self.si = self.calc_responsivity()                  #TES responsivity in units A/W
 
     def calc_responsivity(self):
         # note this does not include a responsivity boost from parasitics
