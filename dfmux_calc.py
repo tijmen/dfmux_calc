@@ -64,12 +64,12 @@ class squid:
 #helper class to store bolometer information
 class bolo:
     def __init__(self,r,loopgain,rstray,psat,tc,tb):
-        self.r = r                    #Operating resistance of the bolometer in ohms
-        self.loopgain = loopgain      #operating loopgain of the bolometer
-        self.rstray = rstray          #stray resistance in series with the bolometer in ohms
-        self.psat = psat              #saturation power of the bolometer in watts
-        self.tc = tc                  #critical temperature of the bolometer in kelvin
-        self.tb = tb                  #bath temperature the bolometer is operated at in kelvin
+        self.r = np.array([r]).flatten()                    #Operating resistance of the bolometer in ohms
+        self.loopgain = np.array([loopgain]).flatten()      #operating loopgain of the bolometer
+        self.rstray = np.array([rstray]).flatten()          #stray resistance in series with the bolometer in ohms
+        self.psat = np.array([psat]).flatten()              #saturation power of the bolometer in watts
+        self.tc = np.array([tc]).flatten()                  #critical temperature of the bolometer in kelvin
+        self.tb = np.array([tb]).flatten()                  #bath temperature the bolometer is operated at in kelvin
         
 #helper class to store important parasitics
 class parasitics:
@@ -176,7 +176,7 @@ class dfmux_noise:
         
         #Warm electrnics noise
         #carrier = 1.6e-12                                        #A/rtHz JM PhD Table 7.5
-        carrier = 2.9e-12/(bolo.r + bolo.rstray)                  #A/rtHz JM PhD Table 7.5 with bias johnson removed, and scaled by bolometer resistance
+        carrier = 2.9e-12/(bolo.r.reshape(-1, 1) + bolo.rstray.reshape(-1, 1))                  #A/rtHz JM PhD Table 7.5 with bias johnson removed, and scaled by bolometer resistance
         if self.nuller_cold:
             nuller = np.sqrt(0.38e-12**2 + 3.6e-12**2)           #A/rtHz JM PhD p176 + table 7.6
         else:
@@ -185,7 +185,7 @@ class dfmux_noise:
         
 
         #bolometer noise
-        self.jnoise = np.sqrt(2) * 1/(1+self.bolo.loopgain)*np.sqrt(4*1.38e-23*self.bolo.tc / (self.bolo.r))  #JM masters section 5.6
+        self.jnoise = np.sqrt(2) * 1/(1+self.bolo.loopgain.reshape(-1, 1))*np.sqrt(4*1.38e-23*self.bolo.tc.reshape(-1, 1) / (self.bolo.r.reshape(-1, 1)))  #JM masters section 5.6
         
         #if a snubber is being used - add the johnson noise of it in quadrature with bolometer johnson noise
         #this assumes that the snubber is at the same temperature stage as the SAA 
@@ -268,10 +268,10 @@ class dfmux_noise:
 
                         #the comb impedance- assuming this is for an on resonance frequency
                         if not self.squid.snubber:
-                            self.on_res_comb_impedance =  2 * np.pi * self.f * self.para.stripline + self.bolo.r + self.bolo.rstray  
+                            self.on_res_comb_impedance =  2 * np.pi * self.f * self.para.stripline + self.bolo.r.reshape(-1, 1) + self.bolo.rstray.reshape(-1, 1)  
                         else:
                             self.on_res_comb_impedance =   1/(
-                                1/(2 * np.pi * self.f * self.para.stripline + self.bolo.r + self.bolo.rstray  ) + 1/self.squid.snubber ) 
+                                1/(2 * np.pi * self.f * self.para.stripline + self.bolo.r.reshape(-1, 1) + self.bolo.rstray.reshape(-1, 1)  ) + 1/self.squid.snubber ) 
 
                         #the impedance of the path through ground and R48
                         self.c_r48 =   1/(2 * np.pi * self.f * self.para.c_gnd) + self.para.r48 
