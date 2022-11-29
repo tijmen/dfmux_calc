@@ -15,10 +15,10 @@ class squid:
     def __init__(self, zt, rdyn, inoise, lin, 
                  n_series=False, n_parallel = False, power = False,
                  linear_range=2e-6, snubber = False, snubber_c = False, t=0.3):
-        self.zt = zt            #Transimpedance of SAA
-        self.rdyn = rdyn        #Dynamic impedance of SAA
-        self.inoise = inoise    #SAA noise refered to input coil
-        self.lin = lin          #input inductance of the SAA
+        self.zt = np.array([zt]).flatten()            #Transimpedance of SAA
+        self.rdyn = np.array([rdyn]).flatten()        #Dynamic impedance of SAA
+        self.inoise = np.array([inoise]).flatten()    #SAA noise refered to input coil
+        self.lin = np.array([lin]).flatten()          #input inductance of the SAA
         self.n_series = n_series #number of individual SQUIDs in series to form the SAA
         self.n_parallel = n_parallel #number of banks of SQUIDs in parallel to form the SAA
         self.power = power      #power dissipated by SAA when in operation
@@ -139,7 +139,7 @@ class wire:
     #at a given frequency and for a given squid with a dynamic impedance
     def reff(self,squid,f):
         [a,b,c,d] = self.get_abcd(f)
-        return np.abs( (b + d * squid.rdyn)/( a + c * squid.rdyn))
+        return np.abs( (b + d * squid.rdyn.reshape(-1, 1))/( a + c * squid.rdyn.reshape(-1, 1)))
     
     #Calculates the real effective resistance seen by the input of the 1st stage amplifier on the SQUID Controller board
     #without the SAA dynamic impedance, this is used to calculate the johnson noise of the wiring harness and any shunt elements
@@ -151,13 +151,9 @@ class wire:
     #calculates the voltage transfer function from the mK output of the SAA to the input of the 300K SQCB
     #for a list of frequencies and SAA with a dynamic impedance and stores the transfer function as a property of the wire
     def transfer_function(self, squid, frequencies):
-        self.tf =[]        
-        for f in frequencies:
-            [a,b,c,d] = self.get_abcd(f) 
-            self.tf.append( np.abs(1/(a + c * (squid.rdyn  ) - ( b + d * (squid.rdyn  ))/1e6 )) )
+        [a,b,c,d] = self.get_abcd(frequencies) 
+        self.tf = np.abs(1/(a + c * (squid.rdyn.reshape(-1, 1)  ) - ( b + d * (squid.rdyn.reshape(-1, 1)))/1e6 )) 
         return self.tf
-    
-    
     
     #Calculates the nuller(/carrier transfer function with inductive bias elements) from the wiring harness 
     #returns a ratio of current cold to current warm
@@ -321,7 +317,7 @@ class dfmux_noise:
         #scaling the noise from the warm electronics by the current sharing factor, the transfer function
         # and the transimpedance of the saa to refer it to the SAA input coil - units now A/rtHz
         if dan:
-            self.demod= demod_dc * self.csf / self.tf / self.squid.zt 
+            self.demod= demod_dc * self.csf / self.tf / self.squid.zt.reshape(-1, 1) 
         else:
             self.demod =  demod_dc * np.ones(self.f) 
                 
@@ -333,7 +329,7 @@ class dfmux_noise:
             self.saa_scale = self.squid.inoise * self.csf * np.sqrt(2)
         #or if dan off noise by the transimpedance and tf to refer to SQCB
         else:
-            self.saa_scale_f = self.squid.inoise * self.squid.zt * self.tf * np.sqrt(2)
+            self.saa_scale_f = self.squid.inoise * self.squid.zt.reshape(-1, 1) * self.tf * np.sqrt(2)
             
         #total noise from all sources in order the noise from the carrier/nuller chain, the johnson noise of the bolo
         #the scaled demodulator chain noise, and the scaled SAA noise in PICOAMPS/rtHz
@@ -342,8 +338,8 @@ class dfmux_noise:
             
         #if dan is off refering remaining terms to SQCB input - outputs noise in nV/rtHz
         else:
-            self.warm_noise_nc_f = self.warm_noise_nc* self.squid.zt* self.tf
-            self.jnoise_f = self.jnoise* self.squid.zt* self.tf
+            self.warm_noise_nc_f = self.warm_noise_nc* self.squid.zt.reshape(-1, 1)* self.tf
+            self.jnoise_f = self.jnoise* self.squid.zt.reshape(-1, 1)* self.tf
             self.total = np.sqrt((self.warm_noise_nc_f)**2  + (self.jnoise_f)**2 + 
                                           self.demod**2 + self.saa_scale_f**2)*1e9
                 
