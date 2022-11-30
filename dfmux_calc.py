@@ -334,7 +334,7 @@ class dfmux_noise:
         #total noise from all sources in order the noise from the carrier/nuller chain, the johnson noise of the bolo
         #the scaled demodulator chain noise, and the scaled SAA noise in PICOAMPS/rtHz
         if dan:
-            self.total = np.sqrt(self.warm_noise_nc**2 + self.jnoise**2 + self.demod**2 + self.saa_scale**2)*1e12
+            self.total = np.sqrt(self.warm_noise_nc**2 + self.jnoise**2 + self.demod**2 + self.saa_scale**2)
             
         #if dan is off refering remaining terms to SQCB input - outputs noise in nV/rtHz
         else:
