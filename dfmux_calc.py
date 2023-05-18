@@ -180,7 +180,7 @@ class dfmux_noise:
         
         #Warm electrnics noise
         #carrier = 1.6e-12                                        #A/rtHz JM PhD Table 7.5
-        carrier = 2.9e-12/(bolo.r.reshape(-1, 1) + bolo.rstray.reshape(-1, 1))                  #A/rtHz JM PhD Table 7.5 with bias johnson removed, and scaled by bolometer resistance
+        carrier = 2.9e-12/(bolo.r + bolo.rstray)                  #A/rtHz JM PhD Table 7.5 with bias johnson removed, and scaled by bolometer resistance
         if self.nuller_cold:
             nuller = np.sqrt(0.38e-12**2 + 3.6e-12**2)           #A/rtHz JM PhD p176 + table 7.6
         else:
@@ -189,7 +189,7 @@ class dfmux_noise:
         
 
         #bolometer noise
-        self.jnoise = np.sqrt(2) * 1/(1+self.bolo.loopgain.reshape(-1, 1))*np.sqrt(4*1.38e-23*self.bolo.tc.reshape(-1, 1) / (self.bolo.r.reshape(-1, 1)))  #JM masters section 5.6
+        self.jnoise = np.sqrt(2) * 1/(1+self.bolo.loopgain)*np.sqrt(4*1.38e-23*self.bolo.tc / (self.bolo.r))  #JM masters section 5.6
         
         #if a snubber is being used - add the johnson noise of it in quadrature with bolometer johnson noise
         #this assumes that the snubber is at the same temperature stage as the SAA 
@@ -468,3 +468,25 @@ def plt_nei_v_r(saa, bolo, wh, para,f,vmin=None,vmax=None):
     cbar.set_label('Low bias frequency noise [pA/$\sqrt{\mathrm{Hz}}$]')
     
     
+#function to make PDF that can be an input to BoloCalc
+def make_PDF_for_bolocalc(dfmux_noise, filename,
+                          n_bins = 101, noise_low = 0, noise_high = 50):
+    try:
+        if len(dfmux_noise.total) < 100:
+            print('Fewer than 100 neis! Likely not enough samples for a good PDF. Continuing...')
+    except:
+        print('No noise! please run init_freq first')
+        return
+    
+    bins = np.linspace(noise_low, noise_high, n_bins)
+    dat = np.histogram(dfmux_noise.total.flatten()*1e12,bins=bins)
+
+    #normalizing bc BoloCalc wants a normaized PDF
+    dat = (dat[0]/np.sum(dat[0]) , dat[1])
+
+    f = open(filename,'w')
+    for i in range(n_bins-1):
+        f.write(str(dat[1][i]) + ' , '  + str(dat[0][i]) + ' \n') 
+
+
+

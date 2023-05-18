@@ -83,19 +83,27 @@ def make_circuits(dfmux_noise):
     return carrier, nuller
 
 def make_circuit(dfmux_noise,cs,cname):
-    
+
+    #if only a single bolo r or rstray is specified make in an array of the number repeated
+    if len(dfmux_noise.bolo.r)== 1:
+        dfmux_noise.bolo.r  = dfmux_noise.bolo.r * np.ones(len(cs))
+    if len(dfmux_noise.bolo.rstray)== 1:
+        dfmux_noise.bolo.rstray  = dfmux_noise.bolo.rstray * np.ones(len(cs))
+
+
     nuller = Circuit(cname)
     i=0
     for c in cs:
         name= 'rlc'+str(i)
-        nuller.subcircuit(rlc(name,R=dfmux_noise.bolo.r@u_Ohm, C=c@u_pF, para = dfmux_noise.para.c_gnd/len(cs)/4 @u_F))
+        nuller.subcircuit(rlc(name,R=(dfmux_noise.bolo.r[i] + dfmux_noise.bolo.rstray[i] )@u_Ohm, 
+                              C=c@u_pF, para = dfmux_noise.para.c_gnd/len(cs)/4 @u_F))
         nuller.X(str(i+30),name,'bias_pos','sqin_pos','rlc_inter')
         i+=1
     #nuller.R('LC_gdn','rlc_inter',nuller.gnd,150 @u_Ohm)
         
         
     nuller.R('bias','bias_pos','bias_neg',30@u_mOhm)
-    nuller.L('sqin','sqin_pos','bias_neg',dfmux_noise.squid.lin @u_H)
+    nuller.L('sqin','sqin_pos','bias_neg',dfmux_noise.squid.lin[0] @u_H)
     if dfmux_noise.squid.snubber != False:
         if dfmux_noise.squid.snubber_c != False:
             nuller.C('snubc','sqin_pos','snub_mid',dfmux_noise.squid.snubber_c @u_F)
@@ -125,7 +133,8 @@ def get_csf(dfmux_noise):
     bias_fs = signal.argrelmax(np.abs(cna.branches['lsqin']/nna.branches['lsqin']))[0]
     
     csf = np.array([1/np.abs(nna.branches['lsqin'])[i] for i in bias_fs])
-    
+
+    csf = np.repeat(csf.reshape(1,68),len(dfmux_noise.squid.zt),axis=0)
     return csf
 
 
