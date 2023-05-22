@@ -326,7 +326,7 @@ class dfmux_noise:
             
         #scaling the noise of the SAA by the current sharing factor and the demodulation factor
         if dan:
-            self.saa_scale = self.squid.inoise * self.csf * np.sqrt(2)
+            self.saa_scale = self.squid.inoise.reshape(-1, 1) * self.csf * np.sqrt(2)
         #or if dan off noise by the transimpedance and tf to refer to SQCB
         else:
             self.saa_scale_f = self.squid.inoise * self.squid.zt.reshape(-1, 1) * self.tf * np.sqrt(2)

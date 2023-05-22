@@ -134,7 +134,7 @@ def get_csf(dfmux_noise):
     
     csf = np.array([1/np.abs(nna.branches['lsqin'])[i] for i in bias_fs])
 
-    csf = np.repeat(csf.reshape(1,68),len(dfmux_noise.squid.zt),axis=0)
+    csf = np.repeat(csf.reshape(1,len(bias_fs)),len(dfmux_noise.squid.zt),axis=0)
     return csf
 
 
