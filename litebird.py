@@ -39,12 +39,14 @@ for band in bands:
 
     #what voltage bias the detector should be operated at
     vbias = np.sqrt( (rbolo + rstray) * (psat - popt) )
-
-    #aproximate responsivity of the detector
-    resp = np.sqrt(2) / vbias * bolo.loopgain / (1 + bolo.loopgain * (rbolo - rstray)/(rbolo + rstray ) ) 
-
+    
     #by what factor the loogain is being reduced by the stray resistance
     loop_atten = (rbolo - rstray)/(rbolo + rstray )
+
+    #aproximate responsivity of the detector
+    resp = np.sqrt(2) / vbias * bolo.loopgain*loop_atten / (1 + bolo.loopgain*loop_atten * (rbolo - rstray)/(rbolo + rstray ) ) 
+
+    
 
     #what the required NEI for the band is
     nei_req = nep * resp
@@ -76,7 +78,7 @@ for band in bands:
             #print(i,j)
             dfm.bolo.r = rbolo[i][j]
             dfm.bolo.rstray = rstray[i][j]
-            target = nei_req[i][j]*1e12
+            target = nei_req[i][j]
             #print(target)
             n_sq = 1
             #increase number of SAA until NEI met
@@ -90,22 +92,25 @@ for band in bands:
                     fail[i][j] = 0
                     csf[i][j] = dfm.csf[0]
                     
+                    #print(dfm.bolo.r)
+                    
                     if [i,j] == [itarget,jtarget]:
+                        #print('full f!')
                         dfm.init_freq(bias_f,skip_spice=skip_spice)
                         fig, ax = plt.subplots()
                         d.plot_noise(dfm,bias_f,u'#1f77b4')
                         plt.plot([np.min(bias_f),np.max(bias_f)],[target,target],'--',label='NEI Requirement')
                         ax.set_title('Readout NEI for {} GHz band $R_{{bolo}}$={}$\Omega$ $R{{stray}}$={}$\Omega$, \n $\mathcal{{L}}=${}, NEP$_{{read}}$={}aW$/\sqrt{{\mathrm{{Hz}}}}$, {}% NEP increase'.format(
-                        lb.opt_freqs[band] ,round(dfm.bolo.r,2), round(dfm.bolo.rstray,2), bolo.loopgain, round(nep*1e18,1), frac*100))
+                        lb.opt_freqs[band] ,round(dfm.bolo.r[0],2), round(dfm.bolo.rstray[0],2), bolo.loopgain, round(nep*1e18,1), frac*100))
                         plt.legend()
                         plt.savefig(path + '/band_'+str(band) + '_readout_nei.png')
                         
                         fig, ax = plt.subplots()
-                        plt.plot(bias_f, dfm.tf, label='1/TF')
-                        plt.plot(bias_f, dfm.csf, label='CS')
+                        plt.plot(bias_f, dfm.tf.flatten(), label='1/TF')
+                        plt.plot(bias_f, dfm.csf.flatten(), label='CS')
                         plt.xlabel('Bias frequency [MHz]')
                         ax.set_title('TF + CS for {} GHz band $R_{{bolo}}$={}$\Omega$ $R{{stray}}$={}$\Omega$, \n $\mathcal{{L}}=${}, NEP$_{{read}}$={}aW$/\sqrt{{\mathrm{{Hz}}}}$, {}% NEP increase'.format(
-                        lb.opt_freqs[band] ,round(dfm.bolo.r,2), round(dfm.bolo.rstray,2), bolo.loopgain, round(nep*1e18,1), frac*100))
+                        lb.opt_freqs[band] ,round(dfm.bolo.r[0],2), round(dfm.bolo.rstray[0],2), bolo.loopgain, round(nep*1e18,1), frac*100))
                         plt.legend()
                         plt.savefig(path + '/band_'+str(band) + '_tf_cs.png')
                         

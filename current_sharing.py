@@ -83,13 +83,14 @@ def make_circuits(dfmux_noise):
     return carrier, nuller
 
 def make_circuit(dfmux_noise,cs,cname):
-
     #if only a single bolo r or rstray is specified make in an array of the number repeated
-    if len(dfmux_noise.bolo.r)== 1:
+    if type(dfmux_noise.bolo.r)==np.float64 or len(dfmux_noise.bolo.r) == 1:
         dfmux_noise.bolo.r  = dfmux_noise.bolo.r * np.ones(len(cs))
-    if len(dfmux_noise.bolo.rstray)== 1:
+    
+        
+    if type(dfmux_noise.bolo.rstray)==np.float64 or len(dfmux_noise.bolo.rstray) == 1:
         dfmux_noise.bolo.rstray  = dfmux_noise.bolo.rstray * np.ones(len(cs))
-
+    
 
     nuller = Circuit(cname)
     i=0
@@ -129,7 +130,6 @@ def make_circuit(dfmux_noise,cs,cname):
 
 def get_csf(dfmux_noise):
     cna, nna = get_network_analysis(dfmux_noise)
-    
     bias_fs = signal.argrelmax(np.abs(cna.branches['lsqin']/nna.branches['lsqin']))[0]
     
     csf = np.array([1/np.abs(nna.branches['lsqin'])[i] for i in bias_fs])

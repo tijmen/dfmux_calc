@@ -36,11 +36,11 @@ class squid:
         if not self.n_series and not self.n_parallel and not self.power:
             print('squid has no specified array size and/or power!')
             return
-        self.zt *= new_series / self.n_series
-        self.rdyn *= new_series / new_parallel * self.n_parallel / self.n_series
-        self.lin *= new_series * new_parallel / self.n_series / self.n_parallel
-        self.inoise *= np.sqrt(self.n_series * self.n_parallel ) / np.sqrt(new_series * new_parallel)
-        self.power *= new_series * new_parallel / self.n_series / self.n_parallel
+        self.zt = self.zt * new_series / self.n_series
+        self.rdyn = self.rdyn * new_series / new_parallel * self.n_parallel / self.n_series
+        self.lin = self.lin * new_series * new_parallel / self.n_series / self.n_parallel
+        self.inoise = self.inoise * np.sqrt(self.n_series * self.n_parallel ) / np.sqrt(new_series * new_parallel)
+        self.power = self.power * new_series * new_parallel / self.n_series / self.n_parallel
         self.n_series = new_series
         self.n_parallel = new_parallel
         
@@ -313,7 +313,6 @@ class dfmux_noise:
         #calculating the transfer function caused by the SAA Z_dyn and the wiring harness capacitance/any shunts across SAA
         self.tf = np.array(self.wire.transfer_function(self.squid,self.f))
             
-            
         #scaling the noise from the warm electronics by the current sharing factor, the transfer function
         # and the transimpedance of the saa to refer it to the SAA input coil - units now A/rtHz
         if dan:
@@ -372,10 +371,10 @@ def nei_to_nep(dfmux_noise,optical_power):
 #function to make plots of the noise 
 
 def plot_noise(dfmux_noise,f,c,label=None):
-    plt.plot(f/1e6,dfmux_noise.total,c=c,label=label)
+    plt.plot(f/1e6,dfmux_noise.total.flatten()*1e12,c=c,label=label)
     plt.legend()
-    plt.plot(f/1e6,np.abs(dfmux_noise.demod)*1e12 ,'--',label='Expected DEMOD noise',c=c)
-    plt.plot(f/1e6,[np.abs(dfmux_noise.csf[i] * dfmux_noise.squid.inoise )*1e12 for i in range(len(f))] ,'-.',label='Expected SAA noise',c=c)
+    plt.plot(f/1e6,np.abs(dfmux_noise.demod.flatten())*1e12 ,'--',label='Expected DEMOD noise',c=c)
+    plt.plot(f/1e6,dfmux_noise.saa_scale.flatten()*1e12  ,'-.',label='Expected SAA noise',c=c)
     plt.plot(f/1e6,[np.abs(dfmux_noise.jnoise )*1e12 for i in range(len(f))] ,':', label = 'Johnson',lw=2,c=c)
     plt.plot(f/1e6,[np.abs(dfmux_noise.warm_noise_nc )*1e12 for i in range(len(f))] ,':', label = 'warm n/c',c=c)
     if c == colors[0]:
