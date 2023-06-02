@@ -195,7 +195,7 @@ for band in bands:
     CS = ax.contour(rbolo, rstray, loop_atten, 6, colors='w') 
     ax.clabel(CS, fontsize=9, inline=True)
     ax.set_title('CSF at 4.5MHz for {} GHz band: $P_{{sat}}$={}pW, $P_{{opt}}=${}pW, \n $\mathcal{{L}}=${}, NEP$_{{read}}$={}aW$/\sqrt{{\mathrm{{Hz}}}}$, {}% NEP increase'.format(
-                        lb.opt_freqs[band] ,round(psat*1e12,2), round(popt*1e12,2), bolo.loopgain, round(nep*1e18,1), frac*100))
+                        lb.opt_freqs[band] ,round(psat*1e12,2), round(popt*1e12,2), bolo.loopgain[0], round(nep*1e18,1), frac*100))
     cbar = fig.colorbar(c, ax=ax)
 
     plt.xlabel('$R_{bolo}$ [$\Omega$]')
@@ -216,7 +216,7 @@ for band in bands:
     CS = ax.contour(rbolo, rstray, loop_atten, 6, colors='w') 
     ax.clabel(CS, fontsize=9, inline=True)
     ax.set_title('SQUID power dissipation for {} GHz band: $P_{{sat}}$={}pW, $P_{{opt}}=${}pW, \n $\mathcal{{L}}=${}, NEP$_{{read}}$={}aW$/\sqrt{{\mathrm{{Hz}}}}$, {}% NEP increase'.format(
-                        lb.opt_freqs[band] ,round(psat*1e12,2), round(popt*1e12,2), bolo.loopgain, round(nep*1e18,1), frac*100))
+                        lb.opt_freqs[band] ,round(psat*1e12,2), round(popt*1e12,2), bolo.loopgain[0], round(nep*1e18,1), frac*100))
     cbar = fig.colorbar(c, ax=ax)
 
     plt.xlabel('$R_{bolo}$ [$\Omega$]')
