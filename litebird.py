@@ -23,16 +23,16 @@ print('Calculating needed SQUIDs at {} bands, for {} bolometer resistances, and 
 print('... {}% complete'.format(round(tracker_status/tracker_total*100)), end='', flush=True)
 
 
-
+note =  []
 
 for band in bands:
     lb = n.experiment('litebird',0) #loading definitions about bands
     popt = lb.popt[band] #optical power in the band of interest
-    psat = 2.5 * popt    #saturation power in the band
+    psat = 2.5 * popt *psat_factor    #saturation power in the band
 
 
     #required readout NEP
-    nep = lb.ntot[band]  * np.sqrt((1+frac)**2 - 1)
+    nep = np.sqrt(lb.ntot[band]**2 - lb.rreq[band]**2)  * np.sqrt((1+frac)**2 - 1)
 
     #define operating bolometer resistance and stray to sweep through
     rbolo, rstray = np.meshgrid(np.linspace(rbolo_min, rbolo_max , r_steps), np.linspace(rstray_min, rstray_max, r_steps))
@@ -61,7 +61,7 @@ for band in bands:
     #baseline SAA and other parasitics
 
     
-
+    
     
 
     
@@ -85,7 +85,7 @@ for band in bands:
             while True:
                 #print(i,j,n_sq)
                 dfm.squid.scale_SAA(n_sq, p_banks)
-                dfm.init_freq([np.max(bias_f)],skip_spice=skip_spice)
+                dfm.init_freq([np.max(bias_f)],skip_spice=skip_spice,csf_factor = csf_factor)
                 if max(dfm.total) <= target:
                     req_power[i][j] = dfm.squid.power
                     req_nsq[i][j] = n_sq
@@ -95,11 +95,10 @@ for band in bands:
                     #print(dfm.bolo.r)
                     
                     if [i,j] == [itarget,jtarget]:
-                        #print('full f!')
-                        dfm.init_freq(bias_f,skip_spice=skip_spice)
+                        dfm.init_freq(bias_f,skip_spice=skip_spice,csf_factor=csf_factor)
                         fig, ax = plt.subplots()
                         d.plot_noise(dfm,bias_f,u'#1f77b4')
-                        plt.plot([np.min(bias_f)/1e6,np.max(bias_f)/1e6],[target*1e12,target*1e12],'--',label='NEI Requirement')
+                        plt.plot([np.min(bias_f)/1e6,np.max(bias_f)/1e6],[target,target],'--',label='NEI Requirement',c=u'#ff7f0e')
                         ax.set_title('Readout NEI for {} GHz band $R_{{bolo}}$={}$\Omega$ $R{{stray}}$={}$\Omega$, \n $\mathcal{{L}}=${}, NEP$_{{read}}$={}aW$/\sqrt{{\mathrm{{Hz}}}}$, {}% NEP increase'.format(
                         lb.opt_freqs[band] ,round(dfm.bolo.r[0],2), round(dfm.bolo.rstray[0],2), bolo.loopgain, round(nep*1e18,1), frac*100))
                         plt.legend()
@@ -114,6 +113,7 @@ for band in bands:
                         plt.legend()
                         plt.savefig(path + '/branch_band_'+str(band) + '_tf_cs.png')
                         
+                        note.append(dfm.squid.power)
                     
                     #print(n_sq)
                     break
@@ -126,6 +126,26 @@ for band in bands:
                         req_power[i][j] = dfm.squid.power
                         req_nsq[i][j] = n_sq
                         fail[i][j] = 1
+                        
+                        if [i,j] == [itarget,jtarget]:
+                            dfm.init_freq(bias_f,skip_spice=skip_spice,csf_factor=csf_factor)
+                            fig, ax = plt.subplots()
+                            d.plot_noise(dfm,bias_f,u'#1f77b4')
+                            plt.plot([np.min(bias_f)/1e6,np.max(bias_f)/1e6],[target,target],'--',label='NEI Requirement',c=u'#ff7f0e')
+                            ax.set_title('Readout NEI for {} GHz band $R_{{bolo}}$={}$\Omega$ $R{{stray}}$={}$\Omega$, \n $\mathcal{{L}}=${}, NEP$_{{read}}$={}aW$/\sqrt{{\mathrm{{Hz}}}}$, {}% NEP increase'.format(
+                            lb.opt_freqs[band] ,round(dfm.bolo.r,2), round(dfm.bolo.rstray,2), bolo.loopgain, round(nep*1e18,1), frac*100))
+                            plt.legend()
+                            plt.savefig(path + '/band_'+str(band) + '_readout_nei.png')
+                            
+                            fig, ax = plt.subplots()
+                            plt.plot(bias_f/1e6, 1/dfm.tf, label='1/TF')
+                            plt.plot(bias_f/1e6, dfm.csf, label='CS')
+                            plt.xlabel('Bias frequency [MHz]')
+                            ax.set_title('TF + CS for {} GHz band $R_{{bolo}}$={}$\Omega$ $R{{stray}}$={}$\Omega$, \n $\mathcal{{L}}=${}, NEP$_{{read}}$={}aW$/\sqrt{{\mathrm{{Hz}}}}$, {}% NEP increase'.format(
+                            lb.opt_freqs[band] ,round(dfm.bolo.r,2), round(dfm.bolo.rstray,2), bolo.loopgain, round(nep*1e18,1), frac*100))
+                            plt.legend()
+                            plt.savefig(path + '/band_'+str(band) + '_tf_cs.png')
+                        
                         break
             tracker_status += 1
             print('\r... {}% complete'.format(round(tracker_status/tracker_total*100)), end='',flush=True)
@@ -208,4 +228,4 @@ for band in bands:
     
     
 
-    
+print(bands,note)
