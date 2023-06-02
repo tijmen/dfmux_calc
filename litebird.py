@@ -99,11 +99,11 @@ for band in bands:
                         dfm.init_freq(bias_f,skip_spice=skip_spice)
                         fig, ax = plt.subplots()
                         d.plot_noise(dfm,bias_f,u'#1f77b4')
-                        plt.plot([np.min(bias_f),np.max(bias_f)],[target,target],'--',label='NEI Requirement')
+                        plt.plot([np.min(bias_f)/1e6,np.max(bias_f)/1e6],[target*1e12,target*1e12],'--',label='NEI Requirement')
                         ax.set_title('Readout NEI for {} GHz band $R_{{bolo}}$={}$\Omega$ $R{{stray}}$={}$\Omega$, \n $\mathcal{{L}}=${}, NEP$_{{read}}$={}aW$/\sqrt{{\mathrm{{Hz}}}}$, {}% NEP increase'.format(
                         lb.opt_freqs[band] ,round(dfm.bolo.r[0],2), round(dfm.bolo.rstray[0],2), bolo.loopgain, round(nep*1e18,1), frac*100))
                         plt.legend()
-                        plt.savefig(path + '/band_'+str(band) + '_readout_nei.png')
+                        plt.savefig(path + '/branch_band_'+str(band) + '_readout_nei.png')
                         
                         fig, ax = plt.subplots()
                         plt.plot(bias_f, dfm.tf.flatten(), label='1/TF')
@@ -112,7 +112,7 @@ for band in bands:
                         ax.set_title('TF + CS for {} GHz band $R_{{bolo}}$={}$\Omega$ $R{{stray}}$={}$\Omega$, \n $\mathcal{{L}}=${}, NEP$_{{read}}$={}aW$/\sqrt{{\mathrm{{Hz}}}}$, {}% NEP increase'.format(
                         lb.opt_freqs[band] ,round(dfm.bolo.r[0],2), round(dfm.bolo.rstray[0],2), bolo.loopgain, round(nep*1e18,1), frac*100))
                         plt.legend()
-                        plt.savefig(path + '/band_'+str(band) + '_tf_cs.png')
+                        plt.savefig(path + '/branch_band_'+str(band) + '_tf_cs.png')
                         
                     
                     #print(n_sq)
@@ -148,7 +148,7 @@ for band in bands:
     plt.xlabel('$R_{bolo}$ [$\Omega$]')
     plt.ylabel('$R_{stray}$ [$\Omega$]')
     cbar.set_label('Required SQUIDs in array')
-    plt.savefig(path + '/band_'+str(band) + '_SQ_req.png')
+    plt.savefig(path + '/branch_band_'+str(band) + '_SQ_req.png')
 
 
 
@@ -165,7 +165,7 @@ for band in bands:
     plt.xlabel('$R_{bolo}$ [$\Omega$]')
     plt.ylabel('$R_{stray}$ [$\Omega$]')
     cbar.set_label('Required NEI [pA/$\sqrt{\mathrm{Hz}}$]')
-    plt.savefig(path + '/band_'+str(band) + '_NEI_req.png')
+    plt.savefig(path + '/branch_band_'+str(band) + '_NEI_req.png')
 
 
     fig, ax = plt.subplots()
@@ -181,7 +181,7 @@ for band in bands:
     plt.xlabel('$R_{bolo}$ [$\Omega$]')
     plt.ylabel('$R_{stray}$ [$\Omega$]')
     cbar.set_label('CSF @ 4.5MHz')
-    plt.savefig(path + '/band_'+str(band) + '_csf.png')
+    plt.savefig(path + '/branch_band_'+str(band) + '_csf.png')
     
     
     
@@ -202,7 +202,7 @@ for band in bands:
     plt.xlabel('$R_{bolo}$ [$\Omega$]')
     plt.ylabel('$R_{stray}$ [$\Omega$]')
     cbar.set_label('Power dissipated by SQUID Array [nW]')
-    plt.savefig(path + '/band_'+str(band) + '_sq_power.png')
+    plt.savefig(path + '/branch_band_'+str(band) + '_sq_power.png')
     
     
     
