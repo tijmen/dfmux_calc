@@ -44,6 +44,7 @@ bolo = d.bolo(1.0,                   #operating impedence [Ohms] this is ignored
                   10,                #loopgain 
                   0.2,               #stray impedence [Ohms] this is ignored in litebird.py
                   2.5 * 0.24187821,  #psat - this is ignored in litebird.py
+                  0.24187821,
                   0.171,0.1)         #Tc and Tb [K]
 #which bolometer resistance, stray resistances to do calulations for
 #and which combination to do a more detailed plot of what the readout solution looks like

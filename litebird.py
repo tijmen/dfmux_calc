@@ -23,7 +23,7 @@ print('Calculating needed SQUIDs at {} bands, for {} bolometer resistances, and 
 print('... {}% complete'.format(round(tracker_status/tracker_total*100)), end='', flush=True)
 
 
-note =  []
+
 
 for band in bands:
     lb = n.experiment('litebird',0) #loading definitions about bands
@@ -73,17 +73,13 @@ for band in bands:
     #calc needed NEI at each combo
     #step through each
     for i in range(10):
-        #print(i)
         for j in range(10):
-            #print(i,j)
             dfm.bolo.r = rbolo[i][j]
             dfm.bolo.rstray = rstray[i][j]
             target = nei_req[i][j]
-            #print(target)
             n_sq = 1
             #increase number of SAA until NEI met
             while True:
-                #print(i,j,n_sq)
                 dfm.squid.scale_SAA(n_sq, p_banks)
                 dfm.init_freq([np.max(bias_f)],skip_spice=skip_spice,csf_factor = csf_factor)
                 if max(dfm.total) <= target:
@@ -92,7 +88,6 @@ for band in bands:
                     fail[i][j] = 0
                     csf[i][j] = dfm.csf[0]
                     
-                    #print(dfm.bolo.r)
                     
                     if [i,j] == [itarget,jtarget]:
                         dfm.init_freq(bias_f,skip_spice=skip_spice,csf_factor=csf_factor)
@@ -113,16 +108,16 @@ for band in bands:
                         plt.legend()
                         plt.savefig(path + '/branch_band_'+str(band) + '_tf_cs.png')
                         
-                        note.append(dfm.squid.power)
+                        
                     
-                    #print(n_sq)
+                    
                     break
                 else:
                     n_sq += sq_step
                     if n_sq <=100:
                         continue
                     else:
-                        #print('fail!:',max(dfm.total))
+                        
                         req_power[i][j] = dfm.squid.power
                         req_nsq[i][j] = n_sq
                         fail[i][j] = 1
@@ -150,8 +145,7 @@ for band in bands:
             tracker_status += 1
             print('\r... {}% complete'.format(round(tracker_status/tracker_total*100)), end='',flush=True)
 
-        #calculate power per mux
-        #print(j)
+        
 
 
     #plot    
@@ -227,5 +221,3 @@ for band in bands:
     
     
     
-
-print(bands,note)
