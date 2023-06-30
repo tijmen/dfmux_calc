@@ -4,6 +4,7 @@ import dfmux_calc as d
 import nep_calc as n
 import matplotlib
 matplotlib.use('Agg')
+import csv
 
 import sys
 
@@ -23,10 +24,15 @@ print('Calculating needed SQUIDs at {} bands, for {} bolometer resistances, and 
 print('... {}% complete'.format(round(tracker_status/tracker_total*100)), end='', flush=True)
 
 
+dump_out = open(path+'/branch_dump_on_target.csv','w',newline='')
+dump_csv = csv.writer(dump_out)
+dump_csv.writerow(['Band', 'N_SQ','SQ Power'])
 
+
+lb = n.experiment('litebird',0) #loading definitions about bands
 
 for band in bands:
-    lb = n.experiment('litebird',0) #loading definitions about bands
+    
     popt = lb.popt[band] #optical power in the band of interest
     psat = 2.5 * popt *psat_factor    #saturation power in the band
 
@@ -98,6 +104,7 @@ for band in bands:
                         lb.opt_freqs[band] ,round(dfm.bolo.r[0],2), round(dfm.bolo.rstray[0],2), round(bolo.loopgain[0]*loop_atten[i][j],1), round(nep*1e18,1), frac*100))
                         plt.legend()
                         plt.savefig(path + '/branch_band_'+str(band) + '_readout_nei.png')
+                        plt.close()
                         
                         fig, ax = plt.subplots()
                         plt.plot(bias_f, 1/dfm.tf.flatten(), label='1/TF')
@@ -107,8 +114,17 @@ for band in bands:
                         lb.opt_freqs[band] ,round(dfm.bolo.r[0],2), round(dfm.bolo.rstray[0],2), round(bolo.loopgain[0]*loop_atten[i][j],1), round(nep*1e18,1), frac*100))
                         plt.legend()
                         plt.savefig(path + '/branch_band_'+str(band) + '_tf_cs.png')
+                        plt.close()
                         
+                        with open(path + '/branch_band_'+str(band) + '_nc_note.txt','w') as f:
+                            print(dfm.total[-1][-1], dfm.warm_noise_nc[-1])
+                            f.write('at '+str(round(bias_f[-1]/1e6,2)) + ' MHz removing all nuller/carrier noise would lower the total noise by ' + 
+                                    str(round(np.sqrt(dfm.total[-1][-1]**2 - dfm.warm_noise_nc[-1]**2)/dfm.total[-1][-1]*100,2)) 
+                                    + ' percent')
+                            
                         
+
+                        dump_csv.writerow([band, n_sq,dfm.squid.power])
                     
                     
                     break
@@ -131,6 +147,7 @@ for band in bands:
                             lb.opt_freqs[band] ,round(dfm.bolo.r,2), round(dfm.bolo.rstray,2), bolo.loopgain[0], round(nep*1e18,1), frac*100))
                             plt.legend()
                             plt.savefig(path + '/band_'+str(band) + '_readout_nei.png')
+                            plt.close()
                             
                             fig, ax = plt.subplots()
                             plt.plot(bias_f/1e6, 1/dfm.tf, label='1/TF')
@@ -140,6 +157,7 @@ for band in bands:
                             lb.opt_freqs[band] ,round(dfm.bolo.r,2), round(dfm.bolo.rstray,2), bolo.loopgain[0], round(nep*1e18,1), frac*100))
                             plt.legend()
                             plt.savefig(path + '/band_'+str(band) + '_tf_cs.png')
+                            plt.close()
                         
                         break
             tracker_status += 1
@@ -163,7 +181,7 @@ for band in bands:
     plt.ylabel('$R_{stray}$ [$\Omega$]')
     cbar.set_label('Required SQUIDs in array')
     plt.savefig(path + '/branch_band_'+str(band) + '_SQ_req.png')
-
+    plt.close()
 
 
     fig, ax = plt.subplots()
@@ -180,7 +198,7 @@ for band in bands:
     plt.ylabel('$R_{stray}$ [$\Omega$]')
     cbar.set_label('Required NEI [pA/$\sqrt{\mathrm{Hz}}$]')
     plt.savefig(path + '/branch_band_'+str(band) + '_NEI_req.png')
-
+    plt.close()
 
     fig, ax = plt.subplots()
 
@@ -196,7 +214,7 @@ for band in bands:
     plt.ylabel('$R_{stray}$ [$\Omega$]')
     cbar.set_label('CSF @ 4.5MHz')
     plt.savefig(path + '/branch_band_'+str(band) + '_csf.png')
-    
+    plt.close()
     
     
     fig, ax = plt.subplots()
@@ -218,6 +236,6 @@ for band in bands:
     cbar.set_label('Power dissipated by SQUID Array [nW]')
     plt.savefig(path + '/branch_band_'+str(band) + '_sq_power.png')
     
-    
+    plt.close()
     
     
