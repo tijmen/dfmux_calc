@@ -59,7 +59,8 @@ def get_network_analysis(dfmux_noise):
                         number_of_points=(1.1*dfmux_noise.f[-1]-0.9*dfmux_noise.f[0])/36, variation = 'lin')
     
     
-    return cna, nna
+    
+    return cna, nna, simulator, simulator2
 
 
 
@@ -129,12 +130,18 @@ def make_circuit(dfmux_noise,cs,cname):
 
 
 def get_csf(dfmux_noise):
-    cna, nna = get_network_analysis(dfmux_noise)
+    cna, nna,sim, sim2 = get_network_analysis(dfmux_noise)
     bias_fs = signal.argrelmax(np.abs(cna.branches['lsqin']/nna.branches['lsqin']))[0]
     
     csf = np.array([1/np.abs(nna.branches['lsqin'])[i] for i in bias_fs])
 
     csf = np.repeat(csf.reshape(1,len(bias_fs)),len(dfmux_noise.squid.zt),axis=0)
+    ngspice1 = sim.factory(cna).ngspice
+    ngspice1.remove_circuit()
+    ngspice1.destroy()
+    ngspice2 = sim2.factory(nna).ngspice
+    ngspice2.remove_circuit()
+    ngspice2.destroy()
     return csf
 
 
