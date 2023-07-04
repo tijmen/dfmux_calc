@@ -117,7 +117,7 @@ for band in bands:
                         plt.close()
                         
                         with open(path + '/branch_band_'+str(band) + '_nc_note.txt','w') as f:
-                            print(dfm.total[-1][-1], dfm.warm_noise_nc[-1])
+                            #print(dfm.total[-1][-1], dfm.warm_noise_nc[-1])
                             f.write('at '+str(round(bias_f[-1]/1e6,2)) + ' MHz removing all nuller/carrier noise would lower the total noise by ' + 
                                     str(round(np.sqrt(dfm.total[-1][-1]**2 - dfm.warm_noise_nc[-1]**2)/dfm.total[-1][-1]*100,2)) 
                                     + ' percent')
