@@ -233,9 +233,9 @@ class dfmux_noise:
             
             
         #this is a modification to the previous line that adds the johnson noise of the shunt resistor
-        #currently assuming that it is well represented by a current source in paraelle with the 1st stage amplifier
+        #currently assuming that it is well represented by a current source in parallel with the 1st stage amplifier
         #which adds in quadrature with that current noise and is then scaled by the impedance as defined in Joshua's thesis
-        #the change in Reff due to the shunt will be automaticaly handled by the reff function
+        #the change in Reff due to the shunt will be automatically handled by the reff function
         else:
             req=(1/(1/10 + 1/100 + 1/150) + 1/(1/4.22e3 + 1/ (self.wire.reff(self.squid,self.f))) ) #RSQCB as defined in table 7.7
             first_amp = np.sqrt(2) * np.sqrt(   (1.1e-9)**2  +
@@ -364,10 +364,10 @@ def refer_squid(warm_squid, shunt):
 
 #function to produce conversion factor from pA/rtHz NEI to NEP
 def nei_to_nep(dfmux_noise,optical_power):
-    vbias = np.sqrt(dfmux_noise.bolo.r * (dfmux_noise.bolo.psat - optical_power) )
-    responsivity = np.sqrt(2) * dfmux_noise.bolo.loopgain/(
-        1+dfmux_noise.bolo.loopgain*(dfmux_noise.bolo.r - dfmux_noise.bolo.rstray)/(
-            dfmux_noise.bolo.r + dfmux_noise.bolo.rstray))/ vbias
+    vbias = np.sqrt( (dfmux_noise.bolo.r + dfmux_noise.bolo.rstray) * (dfmux_noise.bolo.psat - optical_power) )
+    loop_atten = (dfmux_noise.bolo.r - dfmux_noise.bolo.rstray)/(dfmux_noise.bolo.r + dfmux_noise.bolo.rstray)
+    responsivity =  np.sqrt(2) / vbias * dfmux_noise.bolo.loopgain*loop_atten / (1 + dfmux_noise.bolo.loopgain*loop_atten * (
+        dfmux_noise.bolo.r - dfmux_noise.bolo.rstray)/(dfmux_noise.bolo.r + dfmux_noise.bolo.rstray ) ) 
     return 1/responsivity
 
 
