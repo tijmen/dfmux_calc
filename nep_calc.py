@@ -85,9 +85,12 @@ class experiment:
         #estimating the voltage bias applied to the bolometer
         vbias = np.sqrt((self.readout.bolo.r + self.readout.bolo.rstray) * ( self.psat[i]*(1+err/10) -  self.popt[i] ) )
             
+        #amount the loopgain is attenuated by 
+        loop_atten = (self.readout.bolo.r - self.readout.bolo.rstray)/(self.readout.bolo.r + self.readout.bolo.rstray)
+        
         #estimating the responsivity of the bolometer
-        responsivity = np.sqrt(2)/vbias * self.readout.bolo.loopgain / ( 1 + 
-              self.readout.bolo.loopgain *(self.readout.bolo.r - self.readout.bolo.rstray)/(self.readout.bolo.r + self.readout.bolo.rstray) )
+        responsivity = np.sqrt(2)/vbias * loop_atten * self.readout.bolo.loopgain / ( 1 + 
+              loop_atten * self.readout.bolo.loopgain *(self.readout.bolo.r - self.readout.bolo.rstray)/(self.readout.bolo.r + self.readout.bolo.rstray) )
         return 1/responsivity
     
     '''
