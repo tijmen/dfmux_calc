@@ -142,21 +142,21 @@ for band in bands:
                             dfm.init_freq(bias_f,skip_spice=skip_spice,csf_factor=csf_factor)
                             fig, ax = plt.subplots()
                             d.plot_noise(dfm,bias_f,u'#1f77b4')
-                            plt.plot([np.min(bias_f)/1e6,np.max(bias_f)/1e6],[target,target],'--',label='NEI Requirement',c=u'#ff7f0e')
+                            plt.plot([np.min(bias_f)/1e6,np.max(bias_f)/1e6],[target*1e12,target*1e12],'--',label='NEI Requirement',c=u'#ff7f0e')
                             ax.set_title('Readout NEI for {} GHz band $R_{{bolo}}$={}$\Omega$ $R{{stray}}$={}$\Omega$, \n $\mathcal{{L}}=${}, NEP$_{{read}}$={}aW$/\sqrt{{\mathrm{{Hz}}}}$, {}% NEP increase'.format(
-                            lb.opt_freqs[band] ,round(dfm.bolo.r,2), round(dfm.bolo.rstray,2), bolo.loopgain[0], round(nep*1e18,1), frac*100))
+                            lb.opt_freqs[band] ,round(dfm.bolo.r[0],2), round(dfm.bolo.rstray[0],2), round(bolo.loopgain[0]*loop_atten[i][j],1), round(nep*1e18,1), frac*100))
                             plt.legend()
-                            plt.savefig(path + '/band_'+str(band) + '_readout_nei.png')
+                            plt.savefig(path + '/branch_band_'+str(band) + '_readout_nei.png')
                             plt.close()
                             
                             fig, ax = plt.subplots()
-                            plt.plot(bias_f/1e6, 1/dfm.tf, label='1/TF')
-                            plt.plot(bias_f/1e6, dfm.csf, label='CS')
+                            plt.plot(bias_f, 1/dfm.tf.flatten(), label='1/TF')
+                            plt.plot(bias_f, dfm.csf.flatten(), label='CS')
                             plt.xlabel('Bias frequency [MHz]')
                             ax.set_title('TF + CS for {} GHz band $R_{{bolo}}$={}$\Omega$ $R{{stray}}$={}$\Omega$, \n $\mathcal{{L}}=${}, NEP$_{{read}}$={}aW$/\sqrt{{\mathrm{{Hz}}}}$, {}% NEP increase'.format(
-                            lb.opt_freqs[band] ,round(dfm.bolo.r,2), round(dfm.bolo.rstray,2), bolo.loopgain[0], round(nep*1e18,1), frac*100))
+                            lb.opt_freqs[band] ,round(dfm.bolo.r[0],2), round(dfm.bolo.rstray[0],2), round(bolo.loopgain[0]*loop_atten[i][j],1), round(nep*1e18,1), frac*100))
                             plt.legend()
-                            plt.savefig(path + '/band_'+str(band) + '_tf_cs.png')
+                            plt.savefig(path + '/branch_band_'+str(band) + '_tf_cs.png')
                             plt.close()
                         
                         break
