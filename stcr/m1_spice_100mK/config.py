@@ -57,7 +57,7 @@ rstray_min = 0.0
 rstray_max =0.2
 r_steps = 10
 
-bands = [1,11,18] #which bands to use in calculation
+bands = [0, 1,11,18] #which bands to use in calculation
 psat_factor = 1.0
 
 ##############################
@@ -80,13 +80,39 @@ csf_factor = False #if you want to assume the CSF is of by x factor
 ##############################
 ########### PLOTS ############
 ##############################   
-max_power = 10  #max sq power dissipation to show on plots colorbar
+max_power = 20  #max sq power dissipation to show on plots colorbar
 
 
 
 
 
 
+
+
+##############################
+####### DIST SPECIFIC#########
+############################## 
+#number of SQUIDs in array
+nsq = 20
+title ='100mK '+str(nsq)+'xSTCR '
+
+
+#define SQ parameters with spreads based on current STCRs, Zts scaled down to litebird appropriate size
+#number of SAA to draw
+n_sq_draw = 100
+sratio = nsq/(saa.n_series)
+nsqratio = nsq/(saa.n_parallel*saa.n_series)
+
+zt_spread = 300*sratio
+zdyn_spread = 100*sratio*saa.n_parallel
+nei_spread = 0.2e-12 / np.sqrt(nsqratio)
+
+
+#define specific bolometer parameters for the litebird_net_dist script
+dist_rbolo_mean = 0.78
+dist_rbolo_spread = 0.05
+dist_rstray_mean = 0.11
+dist_rstray_spread = 0.025
 
 
 
