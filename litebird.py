@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import dfmux_calc as d
-import nep_calc as n
+import nep_calc as nep
 import matplotlib
 matplotlib.use('Agg')
 import csv
@@ -29,7 +29,7 @@ dump_csv = csv.writer(dump_out)
 dump_csv.writerow(['Band', 'N_SQ','SQ Power'])
 
 
-lb = n.experiment('litebird',0) #loading definitions about bands
+lb = nep.experiment('litebird',0) #loading definitions about bands
 
 for band in bands:
     
@@ -38,7 +38,7 @@ for band in bands:
 
 
     #required readout NEP
-    nep = np.sqrt(lb.ntot[band]**2 - lb.rreq[band]**2)  * np.sqrt((1+frac)**2 - 1)
+    nep = np.sqrt(lb.nphon[band]**2 + lb.nphot[band]**2)  * np.sqrt((1+frac)**2 - 1)
 
     #define operating bolometer resistance and stray to sweep through
     rbolo, rstray = np.meshgrid(np.linspace(rbolo_min, rbolo_max , r_steps), np.linspace(rstray_min, rstray_max, r_steps))
@@ -130,7 +130,7 @@ for band in bands:
                     break
                 else:
                     n_sq += sq_step
-                    if n_sq <=100:
+                    if n_sq <=150:
                         continue
                     else:
                         
@@ -169,7 +169,7 @@ for band in bands:
     #plot    
     fig, ax = plt.subplots()
 
-    c = ax.pcolormesh(rbolo, rstray, req_nsq, cmap='jet',vmin=1,vmax = 50,shading='auto')
+    c = ax.pcolormesh(rbolo, rstray, req_nsq, cmap='jet',vmin=1,vmax = 80,shading='auto')
     c2 = ax.pcolormesh(rbolo, rstray, np.where(fail == 1, 1, np.nan), cmap='binary', vmin=0, vmax=1,zorder=10,shading='auto')
     CS = ax.contour(rbolo, rstray, loop_atten, 6, colors='w') 
     ax.clabel(CS, fontsize=9, inline=True)
