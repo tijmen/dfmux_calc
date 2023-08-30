@@ -170,7 +170,7 @@ class wire:
 
 class dfmux_noise:
     
-    def __init__(self, squid, bolo, wire, para, nuller_wire=None, nuller_cold=False):
+    def __init__(self, squid, bolo, wire, para, nuller_wire=None, nuller_cold=False,bias_res=False):
         self.squid = squid         #a squid object 
         self.bolo = bolo           #a bolometer object
         self.wire = wire           #a wiring harness object
@@ -197,6 +197,11 @@ class dfmux_noise:
         if self.squid.snubber != False:
             self.jnoise = np.sqrt(self.jnoise**2 + 4*1.38e-23*self.squid.t / (self.squid.snubber)) 
         
+        #if the circuit is using a bias resistor, assume it is 30mOhm and at the same temperature as the SQUID
+        #this is multiplied by sqrt(2) due to AC bias and divided by the comb impedance to refer to SQ input coil, JM PhD table 7.8
+        if bias_res:
+            self.jnoise = np.sqrt(self.jnoise**2 + 2*4*1.38e-23*self.squid.t *0.03/(bolo.r + bolo.rstray)**2)
+
     
 
     def init_freq(self, frequencies, #frequencies to calculate noise at
