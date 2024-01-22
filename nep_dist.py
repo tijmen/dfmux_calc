@@ -26,7 +26,7 @@ seed = np.random.rand(n_sq_draw)
 # changing some SQUID parameters to ones with spread, rescaling to appropriate array size
 saa.zt = norm.ppf(seed,loc=saa.zt*sratio,scale=zt_spread)
 saa.rdyn = norm.ppf(seed,loc=saa.rdyn*sratio*saa.n_parallel,scale=zdyn_spread)
-saa.inoise  = norm.ppf(seed,loc=saa.inoise / np.sqrt(nsqratio),scale=nei_spread)
+saa.inoise  = norm.ppf(np.abs(1-seed),loc=saa.inoise / np.sqrt(nsqratio),scale=nei_spread)
 
 #more parameters with no spread
 saa.lin = saa.lin * nsqratio

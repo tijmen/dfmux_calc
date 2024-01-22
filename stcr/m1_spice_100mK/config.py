@@ -93,7 +93,7 @@ max_power = 20  #max sq power dissipation to show on plots colorbar
 ####### DIST SPECIFIC#########
 ############################## 
 #number of SQUIDs in array
-nsq = 20
+nsq = 60
 title ='100mK '+str(nsq)+'xSTCR '
 
 

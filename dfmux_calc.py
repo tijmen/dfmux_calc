@@ -382,10 +382,10 @@ def nei_to_nep(dfmux_noise,optical_power):
 def plot_noise(dfmux_noise,f,c,label=None):
     plt.plot(f/1e6,dfmux_noise.total.flatten()*1e12,c=c,label=label)
     plt.legend()
-    plt.plot(f/1e6,np.abs(dfmux_noise.demod.flatten())*1e12 ,'--',label='Expected DEMOD noise',c=c)
-    plt.plot(f/1e6,dfmux_noise.saa_scale.flatten()*1e12  ,'-.',label='Expected SAA noise',c=c)
-    plt.plot(f/1e6,[np.abs(dfmux_noise.jnoise )*1e12 for i in range(len(f))] ,':', label = 'Johnson',lw=2,c=c)
-    plt.plot(f/1e6,[np.abs(dfmux_noise.warm_noise_nc )*1e12 for i in range(len(f))] ,':', label = 'warm n/c',c=c)
+    plt.plot(f/1e6,np.abs(dfmux_noise.demod.flatten())*1e12 ,'--',label='DEMOD noise',c=c)
+    plt.plot(f/1e6,dfmux_noise.saa_scale.flatten()*1e12  ,'-.',label='SAA noise',c=c)
+    plt.plot(f/1e6,[np.abs(dfmux_noise.jnoise )*1e12 for i in range(len(f))] ,':', label = 'Cryo. Johnson',lw=2,c=c)
+    plt.plot(f/1e6,[np.abs(dfmux_noise.warm_noise_nc )*1e12 for i in range(len(f))] ,':', label = 'Nuller and Carrier',c=c)
     if c == colors[0]:
         plt.legend()
     plt.xlabel('Bias frequency [MHz]')
