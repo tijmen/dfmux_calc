@@ -1,10 +1,10 @@
 import numpy as np
 from scipy import signal
-
-
+import math
 from PySpice.Spice.Netlist import Circuit, SubCircuit, SubCircuitFactory
-from PySpice.Unit import *
+from PySpice.Unit import u_Ω, u_uH, u_pF, u_F, u_Ohm, u_V, u_A, u_mOhm, u_H, u_MHz
 
+DEBUG = False # set this to True when debugging this code
 
 # a subcircuit that is just a bolometer with a LC resonator
 class rlc(SubCircuit):
@@ -45,26 +45,31 @@ def get_network_analysis(dfmux_noise):
     simulator = carrier.simulator(temperature=1, nominal_temperature=1)
 
     f = np.atleast_1d(dfmux_noise.f)
-    print(f"Input frequency(ies): {f}")
+    if DEBUG:
+        print(f"Input frequency(ies): {f}")
 
     if len(f) == 1:
         center_frequency = f[0] / 1e6 @ u_MHz
-        start_frequency = center_frequency * 0.9
-        stop_frequency = center_frequency * 1.1
-        number_of_points = 101
-        print(f"Single frequency input: {center_frequency}")
-        print(
-            f"Simulating from {start_frequency} to {stop_frequency} with {number_of_points} points"
-        )
+        start_frequency = center_frequency * 0.98
+        stop_frequency = center_frequency * 1.02
+        number_of_points = 1001
+        if DEBUG:
+            print(f"Single frequency input: {center_frequency}")
+        if DEBUG:
+            print(
+                f"Simulating from {start_frequency} to {stop_frequency} with {number_of_points} points"
+            )
     else:
         start_frequency = f.min() / 1e6 * 0.9 @ u_MHz
         stop_frequency = f.max() / 1e6 * 1.1 @ u_MHz
         frequency_step = np.diff(f).min()
         number_of_points = int((1.1 * f.max() - 0.9 * f.min()) / frequency_step) + 1
-        print(f"Multiple frequency input ranging from {f.min()} to {f.max()}")
-        print(
-            f"Simulating from {start_frequency} to {stop_frequency} with {number_of_points} points"
-        )
+        if DEBUG:
+            print(f"Multiple frequency input ranging from {f.min()} to {f.max()}")
+        if DEBUG:
+            print(
+                f"Simulating from {start_frequency} to {stop_frequency} with {number_of_points} points"
+            )
 
     cna = simulator.ac(
         start_frequency=start_frequency,
@@ -81,10 +86,6 @@ def get_network_analysis(dfmux_noise):
         number_of_points=number_of_points,
         variation="lin",
     )
-
-    # print("Verify outputs...")
-    # print(f"Carrier branches: {cna.branches}")
-    # print(f"Nuller branches: {nna.branches}")
 
     return cna, nna, simulator, simulator2
 
@@ -109,6 +110,14 @@ def make_circuits(dfmux_noise):
 
 
 def make_circuit(dfmux_noise, cs, cname):
+
+    if DEBUG:
+        print("DEBUG!")
+    if DEBUG:
+        print(f"cs: {cs}")
+    if DEBUG:
+        print(f"cname: {cname}")
+
     nuller = Circuit(cname)
 
     # Convert cs to a numpy array to ensure consistent iteration and indexing
@@ -178,35 +187,51 @@ def make_circuit(dfmux_noise, cs, cname):
 
 
 def get_csf(dfmux_noise):
-    print("Calling get_network_analysis...")
+    if DEBUG:
+        print("Calling get_network_analysis...")
     cna, nna, sim, sim2 = get_network_analysis(dfmux_noise)
 
     carrier_na = cna.branches["lsqin"].as_ndarray()
     nuller_na = nna.branches["lsqin"].as_ndarray()
-    print(f"Carrier NA: {carrier_na}")
-    print(f"Nuller NA: {nuller_na}")
+    if DEBUG:
+        print(f"Carrier NA: {carrier_na}")
+    if DEBUG:
+        print(f"Nuller NA: {nuller_na}")
 
-    print("Calculating ratio of lsqin branches...")
+    if DEBUG:
+        print("Calculating ratio of lsqin branches...")
     ratio = np.abs(carrier_na / nuller_na)
-    print(f"Ratio values: {ratio}")
+    if DEBUG:
+        print(f"Ratio values: {ratio}")
 
-    print("Finding bias_fs using signal.argrelmax...")
+    if DEBUG:
+        print("Finding bias_fs using signal.argrelmax...")
     bias_fs = signal.argrelmax(ratio)[0]
-    print(f"bias_fs: {bias_fs}")
+    if DEBUG:
+        print(f"bias_fs: {bias_fs}")
+    if DEBUG:
+        print(f"argrelmax returns: {signal.argrelmax(ratio)}")
+    if DEBUG:
+        print(f"its zero'th element: {signal.argrelmax(ratio)[0]}")
 
-    print("Calculating csf...")
+    if DEBUG:
+        print("Calculating csf...")
     csf = []
     for i in bias_fs:
         lsqin_value = np.abs(nna.branches["lsqin"].as_ndarray()[i])
-        print(f"lsqin value at index {i}: {lsqin_value}")
+        if DEBUG:
+            print(f"lsqin value at index {i}: {lsqin_value}")
         csf_value = 1 / lsqin_value
         csf.append(csf_value)
-        print(f"CSF value at index {i}: {csf_value}")
+        if DEBUG:
+            print(f"CSF value at index {i}: {csf_value}")
 
     csf = np.array(csf)
-    print(f"Final csf array: {csf}")
+    if DEBUG:
+        print(f"Final csf array: {csf}")
 
-    print("Cleaning up simulation instances...")
+    if DEBUG:
+        print("Cleaning up simulation instances...")
     ngspice1 = sim.factory(cna).ngspice
     ngspice1.remove_circuit()
     ngspice1.destroy()

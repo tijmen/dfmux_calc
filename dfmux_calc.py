@@ -94,13 +94,13 @@ class squid:
         self.m_factor *= m_factor
 
     def print_info(self):
-        print("Transimpedence: {} $\Omega$".format(round(self.zt, 0)))
-        print("Dyn. impedence: {} $\Omega$".format(round(self.rdyn, 0)))
-        print("Input inductance: {} nH".format(round(self.lin / 1e-9, 0)))
-        print("NEI: {} pA/rtHz".format(round(self.inoise / 1e-12, 1)))
-        print("Power dis.: {} nW".format(round(self.power / 1e-9, 0)))
-        print("Array size: {}x{}".format(self.n_series, self.n_parallel))
-        print("Linear range: {} $\mu$A".format(round(self.linear_range / 1e-6, 2)))
+        print(r"Transimpedence: {} $\Omega$".format(round(self.zt, 0)))
+        print(r"Dyn. impedence: {} $\Omega$".format(round(self.rdyn, 0)))
+        print(r"Input inductance: {} nH".format(round(self.lin / 1e-9, 0)))
+        print(r"NEI: {} pA/rtHz".format(round(self.inoise / 1e-12, 1)))
+        print(r"Power dis.: {} nW".format(round(self.power / 1e-9, 0)))
+        print(r"Array size: {}x{}".format(self.n_series, self.n_parallel))
+        print(r"Linear range: {} $\mu$A".format(round(self.linear_range / 1e-6, 2)))
 
 
 # helper class to store bolometer information
@@ -199,7 +199,7 @@ class wire:
 
     # Calculates the real effective resistance seen by the input of the 1st stage amplifier on the SQUID Controller board
     # without the SAA dynamic impedance, this is used to calculate the johnson noise of the wiring harness and any shunt elements
-    def real_reff(f):
+    def real_reff(self, f):
         [a, b, c, d] = self.get_abcd(f)
         return np.real((b) / (a))
 
@@ -499,7 +499,7 @@ class dfmux_noise:
 
         # this is an option to calculate SQCB input refered noise with DAN off forcing CSF to not impact the noise
         else:
-            self.csf = np.ones(lens(self.f))
+            self.csf = np.ones(len(self.f))
 
         # applying the CSF factor if asked for
         if csf_factor != False:
@@ -511,10 +511,6 @@ class dfmux_noise:
         # scaling the noise from the warm electronics by the current sharing factor, the transfer function
         # and the transimpedance of the saa to refer it to the SAA input coil - units now A/rtHz
         if dan:
-            print("Debug: demod_dc", demod_dc)
-            print("Debug: csf", self.csf)
-            print("Debug: tf", self.tf)
-            print("Debug: squid.zt", self.squid.zt)
             self.demod = demod_dc * self.csf / self.tf / self.squid.zt
 
         else:
@@ -532,10 +528,6 @@ class dfmux_noise:
         # total noise from all sources in order the noise from the carrier/nuller chain, the johnson noise of the bolo
         # the scaled demodulator chain noise, and the scaled SAA noise in PICOAMPS/rtHz
         if dan:
-            print("Debug. warm_noise_nc: ", self.warm_noise_nc)
-            print("Debug. jnoise: ", self.jnoise)
-            print("Debug. demod: ", self.demod)
-            print("Debug. saa_scale: ", self.saa_scale)
             self.total = np.sqrt(
                 self.warm_noise_nc**2
                 + self.jnoise**2
@@ -657,7 +649,7 @@ def sweep_squids(dfmux_noise, start_n=10, end_n=200, step=5):
 
     plt.figure("total")
     plt.xlabel("Bias Frequency [MHz]")
-    plt.ylabel("Total noise [pA/$\sqrt{\mathrm{Hz}}$]")
+    plt.ylabel(r"Total noise [pA/$\sqrt{\mathrm{Hz}}$]")
     cbar = f1.colorbar(cmap)
     cbar.set_label("Number of SQUIDs in series")
 
@@ -703,9 +695,9 @@ def plt_nei_v_r(saa, bolo, wh, para, f, vmin=None, vmax=None):
     ax.clabel(CS, fontsize=9, inline=True)
     cbar = fig.colorbar(c, ax=ax)
 
-    plt.xlabel("$R_{bolo}$")
-    plt.ylabel("$R_{stray}$")
-    cbar.set_label("Low bias frequency noise [pA/$\sqrt{\mathrm{Hz}}$]")
+    plt.xlabel(r"$R_{bolo}$")
+    plt.ylabel(r"$R_{stray}$")
+    cbar.set_label(r"Low bias frequency noise [pA/$\sqrt{\mathrm{Hz}}$]")
 
 
 # function to make PDF that can be an input to BoloCalc

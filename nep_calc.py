@@ -232,7 +232,7 @@ class experiment:
             CS = ax.contour(rbolo, rstray, loop_atten, 6, colors="k")
             ax.clabel(CS, fontsize=9, inline=True)
             ax.set_title(
-                "NEI requirement for {} GHz band $P_{{sat}}$={}, $P_{{opt}}=${}, $\mathcal{{L}}=${}, NEP$_{{read}}$={}".format(
+                r"NEI requirement for {} GHz band $P_{{sat}}$={}, $P_{{opt}}=${}, $\mathcal{{L}}=${}, NEP$_{{read}}$={}".format(
                     self.opt_freqs[i],
                     round(self.psat[i] * 1e12, 2),
                     round(self.popt[i] * 1e12, 2),
@@ -244,8 +244,8 @@ class experiment:
             # ax.axis([x.min(), x.max(), y.min(), y.max()])
             fig.colorbar(c, ax=ax)
 
-            plt.xlabel("$R_{bolo}$ [$\Omega$]")
-            plt.ylabel("$R_{stray}$ [$\Omega$]")
+            plt.xlabel(r"$R_{bolo}$ [$\Omega$]")
+            plt.ylabel(r"$R_{stray}$ [$\Omega$]")
 
     def get_nep(self):
         self.nep = np.ones(len(self.opt_freqs))
@@ -317,7 +317,7 @@ def plt_r_reqs(psat, popt, loopgain, nep):
     CS = ax.contour(rbolo, rstray, loop_atten, 6, colors="k")
     ax.clabel(CS, fontsize=9, inline=True)
     ax.set_title(
-        "NEI requirement for $P_{{sat}}$={}, $P_{{opt}}=${}, $\mathcal{{L}}=${}, NEP$_{{read}}$={}".format(
+        r"NEI requirement for $P_{{sat}}$={}, $P_{{opt}}=${}, $\mathcal{{L}}=${}, NEP$_{{read}}$={}".format(
             round(psat * 1e12, 2), popt * 1e12, loopgain, nep
         )
     )
@@ -325,5 +325,5 @@ def plt_r_reqs(psat, popt, loopgain, nep):
     # ax.axis([x.min(), x.max(), y.min(), y.max()])
     fig.colorbar(c, ax=ax)
 
-    plt.xlabel("$R_{bolo}$ [$\Omega$]")
-    plt.ylabel("$R_{stray}$ [$\Omega$]")
+    plt.xlabel(r"$R_{bolo}$ [$\Omega$]")
+    plt.ylabel(r"$R_{stray}$ [$\Omega$]")
