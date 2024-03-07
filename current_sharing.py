@@ -3,6 +3,7 @@ from scipy import signal
 from PySpice.Spice.Netlist import Circuit, SubCircuit, SubCircuitFactory
 from PySpice.Unit import u_Ω, u_uH, u_pF, u_F, u_Ohm, u_V, u_A, u_mOhm, u_H, u_MHz
 
+
 class RLC(SubCircuit):
     """Subcircuit representing a bolometer with an LC resonator."""
 
@@ -118,13 +119,9 @@ def make_circuit(dfmux_system, cs, cname):
             nuller.C(
                 "snubc", "sqin_pos", "snub_mid", dfmux_system.snubber_capacitance @ u_F
             )
-            nuller.R(
-                "snubr", "snub_mid", "bias_neg", dfmux_system.snubber @ u_Ohm
-            )
+            nuller.R("snubr", "snub_mid", "bias_neg", dfmux_system.snubber @ u_Ohm)
         else:
-            nuller.R(
-                "snubr", "sqin_pos", "bias_neg", dfmux_system.snubber @ u_Ohm
-            )
+            nuller.R("snubr", "sqin_pos", "bias_neg", dfmux_system.snubber @ u_Ohm)
 
     for i in range(10):
         name = "wire" + str(i)
