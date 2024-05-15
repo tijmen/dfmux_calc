@@ -1,7 +1,8 @@
 """
-Electro-thermal solution for Transition Edge Sensors (TES) under DfMux
+Electro-thermal solution for Transition Edge Sensors (TES) read out with DfMux.
 
 Author: Tijmen de Haan
+Email: <tijmen.dehaan@gmail.com>
 Date: 15 May 2024
 
 This module provides functions for simulating the thermal and electrical behavior of 
@@ -11,14 +12,14 @@ conference proceedings.
 
 Functions:
 - r_frac: fractional resistance as a function of temperature
-- r: R(T) curve
-- alpha: logarithmic temperature sensitivity of the TES resistance
-- loop_gain: Computes the loop gain using the MNTES model.
+- r: resistance as a function of temperature
+- alpha: logarithmic temperature sensitivity of the resistance
+- loop_gain: Computes the ETF loop gain using the MNTES model.
 - responsivity: Computes the responsivity of the TES using the MNTES model.
 - power_balance_eq: Calculates the deviation from power balance. This should be
-                    driven to zero to find the equilibrium temperature of the TES.
+                    zeroed to find the equilibrium temperature of the TES.
 - calc_tes: Computes various TES parameters given input parameters.
-- calc_nonlinearity: Computes TES nonlinearity based on changes in parameters.
+- calc_nonlinearity: Computes TES nonlinearity.
 
 Usage:
 - The `calc_tes` function is the main entry point for solving the power balance equation.
