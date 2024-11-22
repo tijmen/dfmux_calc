@@ -7,10 +7,32 @@ Calculations related to the Simons Array / SPT-3G / LiteBIRD DfMux readout syste
  - `LiteBIRD_SSAA_parameters.ipynb` shows an example of how to use `dfmux_calc` for calculation of the LiteBIRD SQUID electrical performance requirements. It also has a brief explanation of how to install SPICE, which is an optional dependency.
  - `mntes.py` calculates the properties of a TES in the DfMux readout system including nonlinearity. 
 
+### Using Docker to Run `dfmux_calc`
+
 If you wish to use the SPICE-enabled calculation of current sharing (i.e., nulling efficiency), be aware that 
-PySpice is an older library and may not function in modern environments. To address this, an example Dockerfile 
-has been included, which you should modify prior to use. Leveraging Docker ensures compatibility with libngspice 
-and PySpice, even on newer systems like Apple Silicon Mac.
+PySpice is an older library and may not function in modern environments. To address this, you can use Docker. Note that if PySpice runs well in your environment, the additional hassle of using a Docker container is not recommended.
+
+If you wish to run `dfmux_calc` in a Docker container, follow these steps:
+
+1. **Modify the Dockerfile**:  
+   Edit the provided `Dockerfile` to match your preferred paths before building the image.
+
+2. **Build the Docker image**:  
+   In the root directory of the repository, run the following command to build the Docker image:
+   ```bash
+   docker build -t dfmux_calc .
+   ```
+
+3. **Run the container**:  
+   Use the following command to execute the container and mount a local directory for output files (e.g., plots):
+   ```bash
+   docker run -v /path/to/local/plots:/app/plots dfmux_calc
+   ```
+
+   - Replace `/path/to/local/plots` with the full path to the directory on your machine where you want the output files to be saved.
+   - Inside the container, the directory is mapped to `/app/plots`.
+
+This setup ensures that `dfmux_calc` runs in an environment that is compatible with the PySpice and libngspice dependencies.
 
 ### Revision History
 
