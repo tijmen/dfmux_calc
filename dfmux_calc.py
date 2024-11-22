@@ -1,3 +1,10 @@
+"""
+dfmux_calc is a module inside the dfmux_calc repository. The module contains a class called DfMuxSystem that
+represents a DfMux system with SQUID, bolometer, wiring harness, and other parasitic elements. The class has 
+a method called calculate_noise that calculates the expected readout noise at the given frequency(ies). The 
+method optionally uses PySpice for CSF calculation.
+"""
+
 import numpy as np
 from scipy import constants as c
 import current_sharing
@@ -74,6 +81,16 @@ class DfMuxSystem:
         self.wire_harness_capacitance = wire_harness_capacitance
         self.wire_harness_inductance = wire_harness_inductance
 
+        # initialize other attributes
+        self.tf = None
+        self.f = None
+        self.csf = None
+        self.demod = None
+        self.saa_scale = None
+        self.inoise = None
+        self.jnoise = None
+        self.total_noise = None
+
     def calculate_responsivity(self):
         """
         Calculates the TES responsivity, assuming no excess responsivity.
@@ -130,40 +147,40 @@ class DfMuxSystem:
         wire_shunt = 2j * np.pi * frequency * self.wire_harness_capacitance
         gamma = np.sqrt(wire_series * wire_shunt)
         z0 = np.sqrt(wire_series / wire_shunt)
-        b = z0 * np.sinh(gamma)
-        a = np.cosh(gamma)  # Assuming no shunt resistor
-        d = np.cosh(gamma)
-        c = 1 / z0 * np.sinh(gamma)  # Assuming no shunt capacitor
-        return a, b, c, d
+        b_element = z0 * np.sinh(gamma)
+        a_element = np.cosh(gamma)  # Assuming no shunt resistor
+        d_element = np.cosh(gamma)
+        c_element = 1 / z0 * np.sinh(gamma)  # Assuming no shunt capacitor
+        return a_element, b_element, c_element, d_element
 
     def wire_reff(self, frequency):
         """
         Calculates the effective resistance seen by the 1st stage amplifier.
         """
-        a, b, c, d = self.wire_get_abcd(frequency)
+        a_element, b_element, c_element, d_element = self.wire_get_abcd(frequency)
         return np.abs(
-            (b + d * self.squid_dynamic_impedance)
-            / (a + c * self.squid_dynamic_impedance)
+            (b_element + d_element * self.squid_dynamic_impedance)
+            / (a_element + c_element * self.squid_dynamic_impedance)
         )
 
     def wire_real_reff(self, frequency):
         """
         Calculates the real effective resistance without SAA dynamic impedance.
         """
-        a, b, c, d = self.wire_get_abcd(frequency)
-        return np.real(b / a)
+        a_element, b_element, _, _ = self.wire_get_abcd(frequency)
+        return np.real(b_element / a_element)
 
     def wire_transfer_function(self, frequencies):
         """
         Calculates the voltage transfer function of the wiring harness.
         """
-        a, b, c, d = self.wire_get_abcd(frequencies)
+        a_element, b_element, c_element, d_element = self.wire_get_abcd(frequencies)
         self.tf = np.abs(
             1
             / (
-                a
-                + c * self.squid_dynamic_impedance
-                - (b + d * self.squid_dynamic_impedance) / 1e6
+                a_element
+                + c_element * self.squid_dynamic_impedance
+                - (b_element + d_element * self.squid_dynamic_impedance) / 1e6
             )
         )
         return self.tf
@@ -231,6 +248,11 @@ class DfMuxSystem:
         else:
             # Use PySpice for CSF calculation
             self.csf = current_sharing.get_csf(self)
+            print("CSF calculation with Spice completed.")
+            if len(self.csf) != len(self.f):
+                raise ValueError(
+                    f"The current sharing calculation should have found exactly one LC resonant peak for each of the {len(self.f)} input frequencies, but instead found {len(self.csf)} peaks."
+                )
 
         # Calculate wiring harness transfer function
         self.tf = np.array(self.wire_transfer_function(self.f))
@@ -263,7 +285,9 @@ if __name__ == "__main__":
     dfmux_system = DfMuxSystem()
 
     # Calculate and print NEI
-    frequency = 4e6
-    dfmux_system.calculate_noise(frequencies=np.array([frequency]), skip_spice=False)
+    this_frequency = 4e6
+    dfmux_system.calculate_noise(
+        frequencies=np.array([this_frequency]), skip_spice=False
+    )
     nei = dfmux_system.total_noise[0] * 1e12  # in pA/rtHz
-    print(f"NEI at {frequency / 1e6} MHz: {nei:.2f} pA/rtHz")
+    print(f"NEI at {this_frequency / 1e6} MHz: {nei:.2f} pA/rtHz")
