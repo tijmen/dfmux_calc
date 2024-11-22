@@ -48,7 +48,7 @@ def get_network_analysis(dfmux_system):
     else:
         start_frequency = f.min() / 1e6 * 0.9 @ u_MHz
         stop_frequency = f.max() / 1e6 * 1.1 @ u_MHz
-        frequency_step = np.diff(f).min()
+        frequency_step = np.diff(f).min()/36.
         number_of_points = int((1.1 * f.max() - 0.9 * f.min()) / frequency_step) + 1
 
     cna = simulator.ac(
@@ -161,6 +161,7 @@ def get_csf(dfmux_system):
     nuller_na = nna.branches["lsqin"].as_ndarray()
 
     ratio = np.abs(carrier_na / nuller_na)
+
     bias_fs = signal.argrelmax(ratio)[0]
 
     csf = []
