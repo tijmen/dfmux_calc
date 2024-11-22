@@ -7,10 +7,17 @@ Calculations related to the Simons Array / SPT-3G / LiteBIRD DfMux readout syste
  - `LiteBIRD_SSAA_parameters.ipynb` shows an example of how to use `dfmux_calc` for calculation of the LiteBIRD SQUID electrical performance requirements. It also has a brief explanation of how to install SPICE, which is an optional dependency.
  - `mntes.py` calculates the properties of a TES in the DfMux readout system including nonlinearity. 
 
+If you wish to use the SPICE-enabled calculation of current sharing (i.e., nulling efficiency), be aware that 
+PySpice is an older library and may not function in modern environments. To address this, an example Dockerfile 
+has been included, which you should modify prior to use. Leveraging Docker ensures compatibility with libngspice 
+and PySpice, even on newer systems like Apple Silicon Mac.
+
 ### Revision History
 
- - Aug 2022: first version committed to https://github.com/megan-russell/dfmux_calc
+ - Nov 2024: Important precision enhancement in SPICE calculation, added Dockerfile 
  - Mar 2024: forked and simplified, hosted at https://github.com/tijmen/dfmux_calc
+ - Aug 2022: first version committed to https://github.com/megan-russell/dfmux_calc
+
 
 ### Citations
 
