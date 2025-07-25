@@ -276,7 +276,7 @@ class DfMuxSystem:
             np.sqrt(2)
             * 1
             / (1 + self.loopgain)
-            * np.sqrt(4 * c.k * self.critical_temperature / self.operating_resistance)
+            * np.sqrt(4 * c.k * self.critical_temperature / (self.operating_resistance + self.stray_resistance))
         )
 
         # Add snubber Johnson noise if applicable
