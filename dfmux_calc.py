@@ -42,6 +42,8 @@ class DfMuxSystem:
         wire_harness_resistance=30,
         wire_harness_capacitance=40e-12,
         wire_harness_inductance=0.75e-6,
+        bias_resistance = 0,
+        bias_inductance = 5e-9
     ):
         """
         Initializes the DfMuxSystem object with the given parameters.
@@ -80,6 +82,10 @@ class DfMuxSystem:
         self.wire_harness_resistance = wire_harness_resistance
         self.wire_harness_capacitance = wire_harness_capacitance
         self.wire_harness_inductance = wire_harness_inductance
+        
+        # Bias element
+        self.bias_resistance = bias_resistance
+        self.bias_inductance = bias_inductance
 
         # initialize other attributes
         self.tf = None
@@ -216,35 +222,39 @@ class DfMuxSystem:
             )
         )
 
-        if skip_spice:
-            # Analytic approximation (details in Joshua's SPT-3G paper)
-            saa_in_impedance = 2 * np.pi * self.f * self.squid_input_inductance
-            on_res_comb_impedance = (
-                2 * np.pi * self.f * self.stripline_inductance
-                + self.operating_resistance
-                + self.stray_resistance
-            )
-            if self.snubber:
-                on_res_comb_impedance = 1 / (
-                    1 / on_res_comb_impedance + 1 / self.snubber
-                )
-            c_r48 = 1 / (2 * np.pi * self.f * self.parasitic_capacitance) + self.r48
-            self.csf = 1 / (
-                c_r48
-                / (
-                    (on_res_comb_impedance + np.abs(self.wire_series_impedance(self.f)))
-                    * saa_in_impedance
-                    / (
-                        on_res_comb_impedance
-                        + saa_in_impedance
-                        + np.abs(self.wire_series_impedance(self.f))
-                    )
-                    + np.abs(self.wire_series_impedance(self.f))
-                    + c_r48
-                )
-                * on_res_comb_impedance
-                / (on_res_comb_impedance + saa_in_impedance)
-            )
+        if skip_spice or current_sharing.loaded_pyspice == False:
+            # Calculate current sharing analytically 
+            # (some information in SA sensitivity paper, adapted from Joshua's SPT-3G paper)
+            self.csf = current_sharing.get_csf_analytically(self)
+            
+            # # Analytic approximation (details in Joshua's SPT-3G paper)
+            # saa_in_impedance = 2 * np.pi * self.f * self.squid_input_inductance
+            # on_res_comb_impedance = (
+            #     2 * np.pi * self.f * self.stripline_inductance
+            #     + self.operating_resistance
+            #     + self.stray_resistance
+            # )
+            # if self.snubber:
+            #     on_res_comb_impedance = 1 / (
+            #         1 / on_res_comb_impedance + 1 / self.snubber
+            #     )
+            # c_r48 = 1 / (2 * np.pi * self.f * self.parasitic_capacitance) + self.r48
+            # self.csf = 1 / (
+            #     c_r48
+            #     / (
+            #         (on_res_comb_impedance + np.abs(self.wire_series_impedance(self.f)))
+            #         * saa_in_impedance
+            #         / (
+            #             on_res_comb_impedance
+            #             + saa_in_impedance
+            #             + np.abs(self.wire_series_impedance(self.f))
+            #         )
+            #         + np.abs(self.wire_series_impedance(self.f))
+            #         + c_r48
+            #     )
+            #     * on_res_comb_impedance
+            #     / (on_res_comb_impedance + saa_in_impedance)
+            # )
         else:
             # Use PySpice for CSF calculation
             self.csf = current_sharing.get_csf(self)
