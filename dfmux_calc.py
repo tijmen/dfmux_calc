@@ -43,7 +43,8 @@ class DfMuxSystem:
         wire_harness_capacitance=40e-12,
         wire_harness_inductance=0.75e-6,
         bias_resistance = 0,
-        bias_inductance = 5e-9
+        bias_inductance = 5e-9,
+        Rnuller = None # NOT USED FOR ANYTHING RIGHT NOT BUT WILL NEED TO IMPLEMENT IT
     ):
         """
         Initializes the DfMuxSystem object with the given parameters.
