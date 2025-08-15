@@ -44,7 +44,7 @@ class DfMuxSystem:
         wire_harness_inductance=0.75e-6,
         bias_resistance = 0,
         bias_inductance = 5e-9,
-        Rnuller = None # NOT USED FOR ANYTHING RIGHT NOT BUT WILL NEED TO IMPLEMENT IT
+        Rnuller = 3000 
     ):
         """
         Initializes the DfMuxSystem object with the given parameters.
@@ -63,7 +63,7 @@ class DfMuxSystem:
         self.snubber = snubber
         self.snubber_capacitance = snubber_capacitance
         self.temperature = temperature
-        self.nuller_cold = False
+        
 
         # Bolometer parameters
         self.operating_resistance = operating_resistance
@@ -87,6 +87,10 @@ class DfMuxSystem:
         # Bias element
         self.bias_resistance = bias_resistance
         self.bias_inductance = bias_inductance
+        
+        # Nuller chain
+        self.nuller_resistance = Rnuller # Resistance of the nuller current stiffening resistor [ohms]
+        self.nuller_cold = False
 
         # initialize other attributes
         self.tf = None
@@ -192,6 +196,7 @@ class DfMuxSystem:
         )
         return self.tf
 
+    
     def calculate_noise(self, frequencies, skip_spice=False):
         """
         Calculates the expected readout noise at the given frequency(ies).
@@ -201,9 +206,7 @@ class DfMuxSystem:
 
         # Warm electronics noise
         carrier_noise = 2.9e-12 / (self.operating_resistance + self.stray_resistance)
-        nuller_noise = (
-            np.sqrt(0.38e-12**2 + 3.6e-12**2) if self.nuller_cold else 4.9e-12
-        )
+        nuller_noise = self.calculate_nuller_noise()
         warm_noise = np.sqrt(carrier_noise**2 + nuller_noise**2)
 
         # Demodulator chain noise (details in Joshua Montgomery's PhD thesis)
@@ -228,34 +231,6 @@ class DfMuxSystem:
             # (some information in SA sensitivity paper, adapted from Joshua's SPT-3G paper)
             self.csf = current_sharing.get_csf_analytically(self)
             
-            # # Analytic approximation (details in Joshua's SPT-3G paper)
-            # saa_in_impedance = 2 * np.pi * self.f * self.squid_input_inductance
-            # on_res_comb_impedance = (
-            #     2 * np.pi * self.f * self.stripline_inductance
-            #     + self.operating_resistance
-            #     + self.stray_resistance
-            # )
-            # if self.snubber:
-            #     on_res_comb_impedance = 1 / (
-            #         1 / on_res_comb_impedance + 1 / self.snubber
-            #     )
-            # c_r48 = 1 / (2 * np.pi * self.f * self.parasitic_capacitance) + self.r48
-            # self.csf = 1 / (
-            #     c_r48
-            #     / (
-            #         (on_res_comb_impedance + np.abs(self.wire_series_impedance(self.f)))
-            #         * saa_in_impedance
-            #         / (
-            #             on_res_comb_impedance
-            #             + saa_in_impedance
-            #             + np.abs(self.wire_series_impedance(self.f))
-            #         )
-            #         + np.abs(self.wire_series_impedance(self.f))
-            #         + c_r48
-            #     )
-            #     * on_res_comb_impedance
-            #     / (on_res_comb_impedance + saa_in_impedance)
-            # )
         else:
             # Use PySpice for CSF calculation
             self.csf = current_sharing.get_csf(self)
@@ -290,6 +265,50 @@ class DfMuxSystem:
         self.total_noise = np.sqrt(
             warm_noise**2 + self.jnoise**2 + self.demod**2 + self.saa_scale**2
         )
+
+
+    def calculate_nuller_noise(self):
+        """
+        Function to calculate the nuller chain NEI
+        Based on table 7.6 of Joshua Montgomery's thesis
+        
+        Joshua doesn't include an equation for H_n on his thesis
+        so we will simply scale Hn based on R_nuller 
+        following TF_corr in pydfmux/core/utils/transferfunctions.py convert_tf()
+        
+        Because we don't know the H_n frequency dependency, we'll simply take the 
+        average numbers on the table at 1.7 and 4.57 - there doesn't seem to be
+        too much difference in them.
+        
+        We'll calculate everything in units of pA/sqrt(Hz) and at the end convert to
+        A/sqrt(Hz)
+        """
+        Rnuller_default = 750 * 4 # the default nuller stiffening resistor [omhs]
+        
+        Hn_scaling = Rnuller_default/self.nuller_resistance
+        
+        NEI_DAC = 2.4 * Hn_scaling # the dac noise [pA/sqrt(Hz)]
+        NEI_quantization = 0.65 * Hn_scaling # the quantization noise [pA/sqrt(Hz)]
+        NEI_amplifiers = 1.65 * Hn_scaling # the noise from the amplifiers [pA/sqrt(Hz)]
+        
+        NEI_signal_path = 0.9 # the signal path johnson noise [pA/sqrt(Hz)]
+        
+        # Get the johnson noise of the nuller current stiffening resistor
+        if self.nuller_cold: # if the nuller resistor is cold, set its temperature to the bath temp
+            T_Rnuller = self.bath_temperature
+        else: # if not, assume nuller resistor is at room temperature
+            T_Rnuller = 300 # [K]
+        NEI_Rnuller_johnson = np.sqrt(2) * np.sqrt(4 * T_Rnuller * c.k / self.nuller_resistance) * 1e12 # [pA/sqrt(Hz)]
+        
+        NEI_squid_bias = 1.3 # squid flux bias johnson [pA/sqrt(Hz)]
+        
+        NEI_feedback = 1.3 # Low Frequency Feedback Johnson [pA/sqrt(Hz)]
+        
+        # quadrature sum
+        nuller_noise = np.sqrt(NEI_DAC**2 + NEI_quantization**2 + NEI_amplifiers **2 + \
+            NEI_signal_path**2 + NEI_Rnuller_johnson**2 + NEI_squid_bias **2 + NEI_feedback**2)
+        
+        return nuller_noise * 1e-12 # convert back to pA/sqrt(Hz)
 
 
 if __name__ == "__main__":
