@@ -21,7 +21,7 @@ class DfMuxSystem:
         squid_dynamic_impedance=300.0,
         squid_input_noise=2.5e-12,
         squid_input_inductance=15e-9,
-        stray_inductance=10e-9,
+        #stray_inductance=10e-9,
         n_series=False,
         n_parallel=False,
         power=False,
@@ -55,7 +55,7 @@ class DfMuxSystem:
         self.squid_dynamic_impedance = squid_dynamic_impedance
         self.squid_input_noise = squid_input_noise
         self.squid_input_inductance = squid_input_inductance
-        self.stray_inductance = stray_inductance
+        #self.stray_inductance = stray_inductance
         self.n_series = n_series
         self.n_parallel = n_parallel
         self.power = power
